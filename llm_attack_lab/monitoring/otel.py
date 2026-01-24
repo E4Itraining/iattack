@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import time
+import socket
 import logging
 from typing import Optional, Dict, Any, TYPE_CHECKING
 from contextlib import contextmanager
@@ -49,6 +50,17 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
+def _is_port_available(port: int, host: str = "0.0.0.0") -> bool:
+    """Check if a port is available for binding"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((host, port))
+            return True
+    except OSError:
+        return False
+
+
 class OTelConfig:
     """Configuration for OpenTelemetry"""
 
@@ -57,6 +69,8 @@ class OTelConfig:
         self.service_version = os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
         self.otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
         self.prometheus_port = int(os.getenv("PROMETHEUS_METRICS_PORT", "8000"))
+        self.prometheus_port_auto = os.getenv("PROMETHEUS_PORT_AUTO", "true").lower() == "true"
+        self.prometheus_port_range = int(os.getenv("PROMETHEUS_PORT_RANGE", "10"))
         self.enable_tracing = os.getenv("OTEL_ENABLE_TRACING", "true").lower() == "true"
         self.enable_metrics = os.getenv("OTEL_ENABLE_METRICS", "true").lower() == "true"
 
@@ -85,6 +99,7 @@ class OTelManager:
         self._tracer = None
         self._meter = None
         self._initialized = False
+        self._prometheus_port_actual: Optional[int] = None
 
         # Prometheus metrics (local)
         self._prom_metrics: Dict[str, Any] = {}
@@ -186,6 +201,36 @@ class OTelManager:
         metrics.set_meter_provider(meter_provider)
         self._meter = metrics.get_meter(self.config.service_name)
 
+    def _find_available_port(self) -> Optional[int]:
+        """Find an available port for Prometheus metrics server"""
+        base_port = self.config.prometheus_port
+
+        # First, try the configured port
+        if _is_port_available(base_port):
+            return base_port
+
+        # If auto port selection is disabled, return None
+        if not self.config.prometheus_port_auto:
+            logger.warning(
+                f"Port {base_port} is already in use and PROMETHEUS_PORT_AUTO is disabled. "
+                "Prometheus metrics server will not start."
+            )
+            return None
+
+        # Try alternative ports within the configured range
+        logger.info(f"Port {base_port} is in use, searching for available port...")
+        for offset in range(1, self.config.prometheus_port_range + 1):
+            candidate_port = base_port + offset
+            if _is_port_available(candidate_port):
+                logger.info(f"Found available port: {candidate_port}")
+                return candidate_port
+
+        logger.warning(
+            f"No available port found in range {base_port}-{base_port + self.config.prometheus_port_range}. "
+            "Prometheus metrics server will not start."
+        )
+        return None
+
     def _init_prometheus(self):
         """Initialize Prometheus metrics endpoint"""
         if not PROMETHEUS_AVAILABLE:
@@ -229,9 +274,16 @@ class OTelManager:
                 "System compromise status (0=safe, 1=compromised)"
             )
 
+            # Find an available port
+            available_port = self._find_available_port()
+            if available_port is None:
+                logger.warning("Prometheus metrics server disabled due to port conflict")
+                return
+
             # Start Prometheus HTTP server in a separate thread
-            start_prometheus_server(self.config.prometheus_port)
-            logger.info(f"Prometheus metrics server started on port {self.config.prometheus_port}")
+            start_prometheus_server(available_port)
+            self._prometheus_port_actual = available_port
+            logger.info(f"Prometheus metrics server started on port {available_port}")
 
         except Exception as e:
             logger.error(f"Failed to start Prometheus server: {e}")
@@ -250,6 +302,11 @@ class OTelManager:
     def meter(self):
         """Get the meter instance"""
         return self._meter
+
+    @property
+    def prometheus_port(self) -> Optional[int]:
+        """Get the actual Prometheus port in use (may differ from config if port was auto-assigned)"""
+        return self._prometheus_port_actual
 
     @contextmanager
     def trace_span(self, name: str, attributes: Optional[Dict[str, Any]] = None):

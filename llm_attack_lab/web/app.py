@@ -365,8 +365,12 @@ def run_web_server(host='0.0.0.0', port=8081, debug=None):
 
     print(f"Starting LLM Attack Lab Dashboard on http://{host}:{port}")
     print(f"OpenTelemetry enabled: {OTEL_ENABLED}")
-    if OTEL_ENABLED:
-        print(f"Prometheus metrics available on port 8000")
+    if OTEL_ENABLED and otel_manager:
+        prom_port = otel_manager.prometheus_port
+        if prom_port:
+            print(f"Prometheus metrics available on port {prom_port}")
+        else:
+            print("Prometheus metrics server not started (port conflict or disabled)")
 
     # threaded=True is REQUIRED for SSE streaming to work properly
     app.run(host=host, port=port, debug=debug, threaded=True)
