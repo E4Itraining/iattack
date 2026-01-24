@@ -37,7 +37,7 @@ check_dependencies() {
 
     if ! python -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        pip install pytest pytest-watch pytest-cov
+        python -m pip install pytest pytest-watch pytest-cov
     fi
 
     echo -e "${GREEN}Dépendances OK${NC}"
