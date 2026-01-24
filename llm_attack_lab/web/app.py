@@ -50,8 +50,20 @@ logger = get_logger("web")
 
 @app.route('/')
 def index():
-    """Main dashboard page"""
+    """Main dashboard page - redirects to dashboard"""
+    return render_template('dashboard.html')
+
+
+@app.route('/classic')
+def classic():
+    """Classic/legacy interface"""
     return render_template('index.html')
+
+
+@app.route('/dashboard')
+def dashboard():
+    """Advanced security dashboard"""
+    return render_template('dashboard.html')
 
 
 @app.route('/api/status')
@@ -207,6 +219,53 @@ def get_defense_metrics():
 def get_prometheus_metrics():
     """Export metrics in Prometheus format"""
     return metrics.export_prometheus(), 200, {'Content-Type': 'text/plain'}
+
+
+@app.route('/api/dashboard/summary')
+def get_dashboard_summary():
+    """Get comprehensive dashboard summary"""
+    attack_summary = metrics.get_attack_summary()
+    defense_summary = metrics.get_defense_summary()
+    status = simulator.get_status()
+
+    return jsonify({
+        'status': status,
+        'attacks': attack_summary,
+        'defenses': defense_summary,
+        'uptime': metrics.get_all_metrics().get('uptime_seconds', 0),
+        'timestamp': time.time()
+    })
+
+
+@app.route('/api/attack-types')
+def get_attack_type_stats():
+    """Get statistics broken down by attack type"""
+    all_metrics = metrics.get_all_metrics()
+    counters = all_metrics.get('counters', {})
+
+    attack_types = ['prompt_injection', 'jailbreak', 'data_poisoning', 'model_extraction', 'membership_inference']
+    stats = []
+
+    for attack_type in attack_types:
+        total_key = f'attacks_total{{attack_type={attack_type}}}'
+        success_key = f'attacks_successful{{attack_type={attack_type}}}'
+        detected_key = f'attacks_detected{{attack_type={attack_type}}}'
+
+        total = counters.get(total_key, 0)
+        successful = counters.get(success_key, 0)
+        detected = counters.get(detected_key, 0)
+
+        stats.append({
+            'type': attack_type,
+            'display_name': attack_type.replace('_', ' ').title(),
+            'total': int(total),
+            'successful': int(successful),
+            'detected': int(detected),
+            'success_rate': (successful / total * 100) if total > 0 else 0,
+            'detection_rate': (detected / total * 100) if total > 0 else 0
+        })
+
+    return jsonify(stats)
 
 
 @app.route('/health')
