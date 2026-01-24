@@ -28,7 +28,7 @@ scrape_configs:
     scrape_interval: 15s
     metrics_path: '/api/metrics/prometheus'
     static_configs:
-      - targets: ['llm-attack-lab:8080']
+      - targets: ['llm-attack-lab:8081']
         labels:
           service: 'llm-attack-lab-api'
           environment: 'production'
