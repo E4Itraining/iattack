@@ -693,6 +693,160 @@
         @keyframes spin {
             to { transform: rotate(360deg); }
         }
+
+        /* Test Streaming Styles */
+        .test-runner-section {
+            margin-top: 1.5rem;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .test-controls .btn {
+            min-width: 120px;
+        }
+
+        .test-status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            font-size: 0.875rem;
+        }
+
+        .test-status-indicator.running {
+            color: var(--accent-cyan);
+        }
+
+        .test-status-indicator.stopped {
+            color: var(--text-muted);
+        }
+
+        .test-summary {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .test-summary-item {
+            padding: 1rem;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .test-summary-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .test-summary-value.passed { color: var(--accent-green); }
+        .test-summary-value.failed { color: var(--accent-red); }
+        .test-summary-value.skipped { color: var(--accent-yellow); }
+        .test-summary-value.total { color: var(--accent-cyan); }
+        .test-summary-value.duration { color: var(--accent-purple); }
+
+        .test-summary-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 0.25rem;
+        }
+
+        .test-results-stream {
+            max-height: 400px;
+            overflow-y: auto;
+            background: var(--bg-dark);
+            border-radius: 8px;
+            padding: 1rem;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.8rem;
+        }
+
+        .test-result-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .test-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .test-result-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            font-size: 0.75rem;
+        }
+
+        .test-result-icon.passed {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .test-result-icon.failed {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .test-result-icon.skipped {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .test-result-icon.running {
+            background: rgba(6, 182, 212, 0.2);
+            color: var(--accent-cyan);
+        }
+
+        .test-result-name {
+            flex: 1;
+            color: var(--text-secondary);
+        }
+
+        .test-result-duration {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+
+        .test-result-message {
+            margin-top: 0.25rem;
+            padding-left: 1.5rem;
+            color: var(--accent-red);
+            font-size: 0.75rem;
+            white-space: pre-wrap;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .stream-connected {
+            color: var(--accent-green);
+        }
+
+        .stream-disconnected {
+            color: var(--accent-red);
+        }
+
+        @media (max-width: 900px) {
+            .test-summary {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .test-controls {
+                flex-wrap: wrap;
+            }
+        }
     </style>
 </head>
 <body>
@@ -978,6 +1132,63 @@
                     </tr>
                 </tbody>
             </table>
+        </div>
+
+        <!-- Continuous Test Runner -->
+        <div class="card fade-in test-runner-section">
+            <div class="card-header">
+                <span class="card-title">Continuous Test Runner</span>
+                <div class="test-status-indicator" id="test-status-indicator">
+                    <span class="status-dot" id="test-status-dot"></span>
+                    <span id="test-status-text">Stopped</span>
+                    <span id="stream-status" class="stream-disconnected">&#9679;</span>
+                </div>
+            </div>
+
+            <div class="test-controls">
+                <button class="btn btn-primary" id="btn-start-tests" onclick="startTests()">
+                    &#9658; Run Tests
+                </button>
+                <button class="btn btn-secondary" id="btn-start-continuous" onclick="startContinuousTests()">
+                    &#128260; Continuous
+                </button>
+                <button class="btn btn-danger" id="btn-stop-tests" onclick="stopTests()" disabled>
+                    &#9632; Stop
+                </button>
+                <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Interval (s):</label>
+                    <input type="number" class="form-input" id="test-interval" value="30" min="5" max="300" style="width: 80px;">
+                </div>
+            </div>
+
+            <div class="test-summary">
+                <div class="test-summary-item">
+                    <div class="test-summary-value total" id="test-total">0</div>
+                    <div class="test-summary-label">Total</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value passed" id="test-passed">0</div>
+                    <div class="test-summary-label">Passed</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value failed" id="test-failed">0</div>
+                    <div class="test-summary-label">Failed</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value skipped" id="test-skipped">0</div>
+                    <div class="test-summary-label">Skipped</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value duration" id="test-duration">0.0s</div>
+                    <div class="test-summary-label">Duration</div>
+                </div>
+            </div>
+
+            <div class="test-results-stream" id="test-results-stream">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Click "Run Tests" to start streaming test results...
+                </div>
+            </div>
         </div>
     </div>
 
@@ -1464,6 +1675,268 @@
                 document.getElementById('uptime').textContent = Math.floor(uptime / 3600) + 'h';
             }
         }, 1000);
+
+        // ============================================================================
+        // Test Streaming Functionality
+        // ============================================================================
+
+        let testEventSource = null;
+        let testResults = [];
+        let testSummary = { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0 };
+
+        // Connect to test event stream
+        function connectTestStream() {
+            if (testEventSource) {
+                testEventSource.close();
+            }
+
+            testEventSource = new EventSource('/api/tests/stream');
+
+            testEventSource.onopen = function() {
+                document.getElementById('stream-status').className = 'stream-connected';
+                document.getElementById('stream-status').title = 'Stream connected';
+            };
+
+            testEventSource.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    handleTestEvent(data);
+                } catch (e) {
+                    console.error('Failed to parse test event:', e);
+                }
+            };
+
+            testEventSource.onerror = function() {
+                document.getElementById('stream-status').className = 'stream-disconnected';
+                document.getElementById('stream-status').title = 'Stream disconnected';
+                // Try to reconnect after a delay
+                setTimeout(() => {
+                    if (testEventSource && testEventSource.readyState === EventSource.CLOSED) {
+                        connectTestStream();
+                    }
+                }, 5000);
+            };
+        }
+
+        // Handle test events
+        function handleTestEvent(event) {
+            const streamContainer = document.getElementById('test-results-stream');
+
+            switch (event.type) {
+                case 'run_start':
+                    testResults = [];
+                    testSummary = { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0 };
+                    updateTestSummaryUI();
+                    streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">&#128640; Starting test run...</div>';
+                    updateTestStatusUI(true);
+                    break;
+
+                case 'session_start':
+                    streamContainer.innerHTML += '<div style="color: var(--text-muted);">Session started</div>';
+                    break;
+
+                case 'collection_finish':
+                    testSummary.total = event.data.total_tests;
+                    updateTestSummaryUI();
+                    streamContainer.innerHTML += `<div style="color: var(--text-secondary);">Collected ${event.data.total_tests} tests</div>`;
+                    break;
+
+                case 'test_start':
+                    addTestResultToStream(event.data, 'running');
+                    break;
+
+                case 'test_result':
+                    updateTestResult(event.data);
+                    break;
+
+                case 'session_finish':
+                    testSummary = event.data.summary;
+                    updateTestSummaryUI();
+                    const statusColor = event.data.exit_status === 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+                    const statusText = event.data.exit_status === 0 ? 'All tests passed!' : 'Some tests failed';
+                    streamContainer.innerHTML += `<div style="color: ${statusColor}; margin-top: 1rem; font-weight: bold;">&#10004; ${statusText}</div>`;
+                    updateTestStatusUI(false);
+                    break;
+
+                case 'run_stopped':
+                    streamContainer.innerHTML += '<div style="color: var(--accent-yellow); margin-top: 1rem;">&#9632; Test run stopped</div>';
+                    updateTestStatusUI(false);
+                    break;
+            }
+
+            // Auto-scroll to bottom
+            streamContainer.scrollTop = streamContainer.scrollHeight;
+        }
+
+        // Add test result to stream
+        function addTestResultToStream(result, status) {
+            const streamContainer = document.getElementById('test-results-stream');
+            const iconClass = status === 'running' ? 'running' : status;
+            const icon = getTestIcon(status);
+
+            const existingItem = document.getElementById(`test-${result.nodeid.replace(/[^a-zA-Z0-9]/g, '-')}`);
+            if (existingItem) {
+                return; // Already exists
+            }
+
+            const item = document.createElement('div');
+            item.className = 'test-result-item';
+            item.id = `test-${result.nodeid.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            item.innerHTML = `
+                <div class="test-result-icon ${iconClass}">${icon}</div>
+                <span class="test-result-name">${escapeHtml(result.name)}</span>
+                <span class="test-result-duration">${result.duration ? result.duration.toFixed(3) + 's' : '...'}</span>
+            `;
+
+            streamContainer.appendChild(item);
+            testResults.push(result);
+        }
+
+        // Update test result in stream
+        function updateTestResult(result) {
+            const itemId = `test-${result.nodeid.replace(/[^a-zA-Z0-9]/g, '-')}`;
+            let item = document.getElementById(itemId);
+
+            if (!item) {
+                addTestResultToStream(result, result.status);
+                item = document.getElementById(itemId);
+            }
+
+            if (item) {
+                const icon = item.querySelector('.test-result-icon');
+                const duration = item.querySelector('.test-result-duration');
+
+                icon.className = `test-result-icon ${result.status}`;
+                icon.textContent = getTestIcon(result.status);
+                duration.textContent = result.duration.toFixed(3) + 's';
+
+                // Update summary counts
+                if (result.status === 'passed') testSummary.passed++;
+                else if (result.status === 'failed') testSummary.failed++;
+                else if (result.status === 'skipped') testSummary.skipped++;
+
+                updateTestSummaryUI();
+
+                // Add error message if failed
+                if (result.status === 'failed' && result.message) {
+                    const existingMsg = item.querySelector('.test-result-message');
+                    if (!existingMsg) {
+                        const msg = document.createElement('div');
+                        msg.className = 'test-result-message';
+                        msg.textContent = result.message.substring(0, 500);
+                        item.appendChild(msg);
+                    }
+                }
+            }
+        }
+
+        // Get icon for test status
+        function getTestIcon(status) {
+            switch (status) {
+                case 'passed': return '&#10004;';
+                case 'failed': return '&#10008;';
+                case 'skipped': return '&#8631;';
+                case 'running': return '&#9679;';
+                default: return '?';
+            }
+        }
+
+        // Update test summary UI
+        function updateTestSummaryUI() {
+            document.getElementById('test-total').textContent = testSummary.total || 0;
+            document.getElementById('test-passed').textContent = testSummary.passed || 0;
+            document.getElementById('test-failed').textContent = testSummary.failed || 0;
+            document.getElementById('test-skipped').textContent = testSummary.skipped || 0;
+            document.getElementById('test-duration').textContent = (testSummary.duration || 0).toFixed(1) + 's';
+        }
+
+        // Update test status UI
+        function updateTestStatusUI(isRunning) {
+            const dot = document.getElementById('test-status-dot');
+            const text = document.getElementById('test-status-text');
+            const indicator = document.getElementById('test-status-indicator');
+            const btnStart = document.getElementById('btn-start-tests');
+            const btnContinuous = document.getElementById('btn-start-continuous');
+            const btnStop = document.getElementById('btn-stop-tests');
+
+            if (isRunning) {
+                dot.style.background = 'var(--accent-cyan)';
+                dot.style.animation = 'pulse 1s infinite';
+                text.textContent = 'Running...';
+                indicator.className = 'test-status-indicator running';
+                btnStart.disabled = true;
+                btnContinuous.disabled = true;
+                btnStop.disabled = false;
+            } else {
+                dot.style.background = 'var(--text-muted)';
+                dot.style.animation = 'none';
+                text.textContent = 'Stopped';
+                indicator.className = 'test-status-indicator stopped';
+                btnStart.disabled = false;
+                btnContinuous.disabled = false;
+                btnStop.disabled = true;
+            }
+        }
+
+        // Start single test run
+        async function startTests() {
+            connectTestStream();
+            try {
+                const response = await fetch('/api/tests/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ args: [] })
+                });
+                const result = await response.json();
+                if (result.status === 'already_running') {
+                    alert('Tests are already running');
+                }
+            } catch (e) {
+                console.error('Failed to start tests:', e);
+            }
+        }
+
+        // Start continuous test running
+        async function startContinuousTests() {
+            connectTestStream();
+            const interval = parseInt(document.getElementById('test-interval').value) || 30;
+            try {
+                const response = await fetch('/api/tests/start-continuous', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ interval: interval, args: [] })
+                });
+                const result = await response.json();
+                if (result.status === 'already_running') {
+                    alert('Tests are already running');
+                }
+            } catch (e) {
+                console.error('Failed to start continuous tests:', e);
+            }
+        }
+
+        // Stop tests
+        async function stopTests() {
+            try {
+                await fetch('/api/tests/stop', { method: 'POST' });
+            } catch (e) {
+                console.error('Failed to stop tests:', e);
+            }
+        }
+
+        // Initialize test stream on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check test status on load
+            fetch('/api/tests/status')
+                .then(res => res.json())
+                .then(status => {
+                    if (status.is_running) {
+                        connectTestStream();
+                        updateTestStatusUI(true);
+                    }
+                })
+                .catch(e => console.log('Test status check failed:', e));
+        });
     </script>
 </body>
 </html>

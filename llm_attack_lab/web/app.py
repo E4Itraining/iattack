@@ -8,11 +8,12 @@ Includes OpenTelemetry integration for observability.
 import os
 import json
 import time
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 from llm_attack_lab.core.llm_simulator import LLMSimulator, SecurityLevel
 from llm_attack_lab.attacks import ATTACK_REGISTRY
 from llm_attack_lab.monitoring.metrics import get_metrics_collector
 from llm_attack_lab.monitoring.logger import get_logger
+from llm_attack_lab.testing import get_test_runner, stream_test_events
 
 # OpenTelemetry integration
 try:
@@ -266,6 +267,64 @@ def get_attack_type_stats():
         })
 
     return jsonify(stats)
+
+
+# ============================================================================
+# Test Streaming Endpoints (SSE)
+# ============================================================================
+
+@app.route('/api/tests/stream')
+def stream_tests():
+    """Server-Sent Events endpoint for streaming test results"""
+    def generate():
+        for event in stream_test_events():
+            yield event
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+        }
+    )
+
+
+@app.route('/api/tests/start', methods=['POST'])
+def start_tests():
+    """Start a single test run"""
+    data = request.get_json() or {}
+    test_args = data.get('args', [])
+    runner = get_test_runner()
+    result = runner.start_single_run(test_args)
+    return jsonify(result)
+
+
+@app.route('/api/tests/start-continuous', methods=['POST'])
+def start_continuous_tests():
+    """Start continuous test running"""
+    data = request.get_json() or {}
+    interval = data.get('interval', 30.0)
+    test_args = data.get('args', [])
+    runner = get_test_runner()
+    result = runner.start_continuous(interval=interval, test_args=test_args)
+    return jsonify(result)
+
+
+@app.route('/api/tests/stop', methods=['POST'])
+def stop_tests():
+    """Stop continuous test running"""
+    runner = get_test_runner()
+    result = runner.stop()
+    return jsonify(result)
+
+
+@app.route('/api/tests/status')
+def test_status():
+    """Get current test runner status"""
+    runner = get_test_runner()
+    return jsonify(runner.get_status())
 
 
 @app.route('/health')
