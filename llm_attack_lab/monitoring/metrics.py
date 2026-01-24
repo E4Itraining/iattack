@@ -258,6 +258,16 @@ class MetricsCollector:
         successful = self.get_counter("attacks_successful")
         detected = self.get_counter("attacks_detected")
 
+        # Get breakdown by attack type
+        by_type = {}
+        with self._lock:
+            for key, value in self._counters.items():
+                if key.startswith("attacks_total{attack_type="):
+                    # Extract attack type from key like "attacks_total{attack_type=prompt_injection}"
+                    attack_type = key.split("=")[1].rstrip("}")
+                    display_name = attack_type.replace("_", " ").title()
+                    by_type[display_name] = int(value)
+
         return {
             "total_attacks": int(total),
             "successful_attacks": int(successful),
@@ -265,6 +275,7 @@ class MetricsCollector:
             "success_rate": (successful / total * 100) if total > 0 else 0,
             "detection_rate": (detected / total * 100) if total > 0 else 0,
             "attack_duration": self.get_timer_stats("attack_duration"),
+            "by_type": by_type,
         }
 
     def get_defense_summary(self) -> Dict:
