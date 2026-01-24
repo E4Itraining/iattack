@@ -18,3 +18,8 @@ opentelemetry-instrumentation>=0.41b0
 
 # Prometheus client for metrics export
 prometheus-client>=0.17.0
+
+# Testing dependencies
+pytest>=7.4.0
+pytest-watch>=4.2.0
+pytest-cov>=4.1.0

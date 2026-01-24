@@ -459,6 +459,25 @@
             border-color: var(--accent-cyan);
         }
 
+        .btn-grafana {
+            background: linear-gradient(135deg, #f46800 0%, #ff9830 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-grafana:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(244, 104, 0, 0.4);
+        }
+
+        .btn-grafana svg {
+            width: 18px;
+            height: 18px;
+        }
+
         /* Response panel */
         .response-panel {
             margin-top: 1.5rem;
@@ -656,6 +675,12 @@
                     <span class="status-dot" id="system-dot"></span>
                     <span id="system-status-text">Protected</span>
                 </div>
+                <a href="http://localhost:3000" target="_blank" class="btn btn-grafana" title="Open Grafana Dashboard">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.5 12c0-.6-.1-1.2-.2-1.8l1.7-1.4c.2-.2.2-.5.1-.7l-1.6-2.8c-.1-.2-.4-.3-.6-.2l-2 .8c-.5-.4-1-.7-1.6-.9l-.3-2.1c0-.3-.3-.5-.5-.5h-3.2c-.3 0-.5.2-.5.5l-.3 2.1c-.6.2-1.1.5-1.6.9l-2-.8c-.2-.1-.5 0-.6.2L8 8.1c-.1.2-.1.5.1.7l1.7 1.4c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8l-1.7 1.4c-.2.2-.2.5-.1.7l1.6 2.8c.1.2.4.3.6.2l2-.8c.5.4 1 .7 1.6.9l.3 2.1c0 .3.3.5.5.5h3.2c.3 0 .5-.2.5-.5l.3-2.1c.6-.2 1.1-.5 1.6-.9l2 .8c.2.1.5 0 .6-.2l1.6-2.8c.1-.2.1-.5-.1-.7l-1.7-1.4c.1-.6.2-1.2.2-1.8zm-10.5 3c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
+                    </svg>
+                    Grafana
+                </a>
                 <button class="btn btn-secondary" onclick="refreshAll()">
                     &#8635; Refresh
                 </button>
