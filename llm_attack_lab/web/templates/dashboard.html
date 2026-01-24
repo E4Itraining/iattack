@@ -854,7 +854,7 @@
     <header class="header">
         <div class="header-content">
             <div class="logo">
-                <div class="logo-icon">&#128274;</div>
+                <div class="logo-icon">SEC</div>
                 <div class="logo-text">
                     <h1>LLM Attack Lab</h1>
                     <span>Security Dashboard</span>
@@ -872,10 +872,10 @@
                     Grafana
                 </a>
                 <button class="btn btn-secondary" onclick="refreshAll()">
-                    &#8635; Refresh
+                    Refresh
                 </button>
                 <button class="btn btn-danger" onclick="resetSimulator()">
-                    &#8634; Reset
+                    Reset
                 </button>
             </div>
         </div>
@@ -887,18 +887,18 @@
             <div class="card metric-card">
                 <div class="card-header">
                     <span class="card-title">Total Attacks</span>
-                    <div class="card-icon cyan">&#9889;</div>
+                    <div class="card-icon cyan"></div>
                 </div>
                 <div class="metric-value cyan" id="total-attacks">0</div>
                 <div class="metric-change up" id="attacks-change">
-                    <span>&#8593;</span> <span id="attacks-rate">0</span>/min
+                    <span id="attacks-rate">0</span>/min
                 </div>
             </div>
 
             <div class="card metric-card">
                 <div class="card-header">
                     <span class="card-title">Success Rate</span>
-                    <div class="card-icon red">&#9888;</div>
+                    <div class="card-icon red"></div>
                 </div>
                 <div class="metric-value red" id="success-rate">0%</div>
                 <div class="metric-change" id="success-change">
@@ -909,7 +909,7 @@
             <div class="card metric-card">
                 <div class="card-header">
                     <span class="card-title">Detection Rate</span>
-                    <div class="card-icon green">&#128737;</div>
+                    <div class="card-icon green"></div>
                 </div>
                 <div class="metric-value green" id="detection-rate">0%</div>
                 <div class="metric-change">
@@ -920,7 +920,7 @@
             <div class="card metric-card">
                 <div class="card-header">
                     <span class="card-title">Avg Latency</span>
-                    <div class="card-icon yellow">&#9201;</div>
+                    <div class="card-icon yellow"></div>
                 </div>
                 <div class="metric-value yellow" id="avg-latency">0ms</div>
                 <div class="metric-change" id="latency-p95">
@@ -934,13 +934,12 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">Attack Timeline</span>
-                    <div class="card-icon purple">&#128200;</div>
+                    <div class="card-icon purple"></div>
                 </div>
                 <div class="chart-container">
                     <div class="chart-empty-state" id="timeline-empty">
-                        <div class="chart-empty-state-icon">&#128200;</div>
-                        <div>Aucune donnée</div>
-                        <div>Lancez une simulation</div>
+                        <div>No data</div>
+                        <div>Run a simulation</div>
                     </div>
                     <canvas id="timelineChart"></canvas>
                 </div>
@@ -949,13 +948,12 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">Attack Types Distribution</span>
-                    <div class="card-icon blue">&#128202;</div>
+                    <div class="card-icon blue"></div>
                 </div>
                 <div class="chart-container">
                     <div class="chart-empty-state" id="types-empty">
-                        <div class="chart-empty-state-icon">&#128202;</div>
-                        <div>Aucune donnée</div>
-                        <div>Lancez une simulation</div>
+                        <div>No data</div>
+                        <div>Run a simulation</div>
                     </div>
                     <canvas id="attackTypesChart"></canvas>
                 </div>
@@ -964,13 +962,12 @@
             <div class="card">
                 <div class="card-header">
                     <span class="card-title">Defense Performance</span>
-                    <div class="card-icon green">&#128737;</div>
+                    <div class="card-icon green"></div>
                 </div>
                 <div class="chart-container">
                     <div class="chart-empty-state" id="defense-empty">
-                        <div class="chart-empty-state-icon">&#128737;</div>
-                        <div>Aucune donnée</div>
-                        <div>Lancez une simulation</div>
+                        <div>No data</div>
+                        <div>Run a simulation</div>
                     </div>
                     <canvas id="defenseChart"></canvas>
                 </div>
@@ -983,7 +980,7 @@
             <div class="card simulator">
                 <div class="card-header">
                     <span class="card-title">Attack Simulator</span>
-                    <div class="card-icon red">&#128187;</div>
+                    <div class="card-icon red"></div>
                 </div>
 
                 <div class="simulator-form">
@@ -1014,10 +1011,10 @@
 
                     <div class="form-row">
                         <button class="btn btn-primary" onclick="runAttack()">
-                            &#9658; Execute Attack
+                            Execute Attack
                         </button>
                         <button class="btn btn-secondary" onclick="clearPayload()">
-                            &#128465; Clear
+                            Clear
                         </button>
                     </div>
                 </div>
@@ -1099,7 +1096,7 @@
             <div class="card-header">
                 <span class="card-title">Attack History</span>
                 <button class="btn btn-secondary" onclick="exportHistory()">
-                    &#128190; Export
+                    Export
                 </button>
             </div>
             <div class="timeline" id="attack-timeline">
@@ -1141,19 +1138,19 @@
                 <div class="test-status-indicator" id="test-status-indicator">
                     <span class="status-dot" id="test-status-dot"></span>
                     <span id="test-status-text">Stopped</span>
-                    <span id="stream-status" class="stream-disconnected">&#9679;</span>
+                    <span id="stream-status" class="stream-disconnected"></span>
                 </div>
             </div>
 
             <div class="test-controls">
                 <button class="btn btn-primary" id="btn-start-tests" onclick="startTests()">
-                    &#9658; Run Tests
+                    Run Tests
                 </button>
                 <button class="btn btn-secondary" id="btn-start-continuous" onclick="startContinuousTests()">
-                    &#128260; Continuous
+                    Continuous
                 </button>
                 <button class="btn btn-danger" id="btn-stop-tests" onclick="stopTests()" disabled>
-                    &#9632; Stop
+                    Stop
                 </button>
                 <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
                     <label class="form-label" style="margin: 0;">Interval (s):</label>
@@ -1194,7 +1191,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <p>&#9888; This lab is for educational purposes only. Use responsibly.</p>
+        <p>This lab is for educational purposes only. Use responsibly.</p>
         <p>LLM Attack Simulation Lab v1.0 | Security Dashboard</p>
     </footer>
 
@@ -1727,7 +1724,7 @@
                     testResults = [];
                     testSummary = { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0 };
                     updateTestSummaryUI();
-                    streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">&#128640; Starting test run...</div>';
+                    streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Starting test run...</div>';
                     updateTestStatusUI(true);
                     break;
 
@@ -1754,12 +1751,12 @@
                     updateTestSummaryUI();
                     const statusColor = event.data.exit_status === 0 ? 'var(--accent-green)' : 'var(--accent-red)';
                     const statusText = event.data.exit_status === 0 ? 'All tests passed!' : 'Some tests failed';
-                    streamContainer.innerHTML += `<div style="color: ${statusColor}; margin-top: 1rem; font-weight: bold;">&#10004; ${statusText}</div>`;
+                    streamContainer.innerHTML += `<div style="color: ${statusColor}; margin-top: 1rem; font-weight: bold;">${statusText}</div>`;
                     updateTestStatusUI(false);
                     break;
 
                 case 'run_stopped':
-                    streamContainer.innerHTML += '<div style="color: var(--accent-yellow); margin-top: 1rem;">&#9632; Test run stopped</div>';
+                    streamContainer.innerHTML += '<div style="color: var(--accent-yellow); margin-top: 1rem;">Test run stopped</div>';
                     updateTestStatusUI(false);
                     break;
             }
@@ -1833,10 +1830,10 @@
         // Get icon for test status
         function getTestIcon(status) {
             switch (status) {
-                case 'passed': return '&#10004;';
-                case 'failed': return '&#10008;';
-                case 'skipped': return '&#8631;';
-                case 'running': return '&#9679;';
+                case 'passed': return 'OK';
+                case 'failed': return 'X';
+                case 'skipped': return '-';
+                case 'running': return '...';
                 default: return '?';
             }
         }
