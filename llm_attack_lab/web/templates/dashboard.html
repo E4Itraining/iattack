@@ -367,7 +367,43 @@
 
         /* Attack simulator */
         .simulator {
-            grid-column: span 2;
+            /* No longer spans 2 columns - allows sidebar to appear beside it */
+        }
+
+        /* Right sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .sidebar .card {
+            margin-bottom: 0;
+        }
+
+        /* Empty state for charts */
+        .chart-empty-state {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            z-index: 1;
+            pointer-events: none;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .chart-empty-state.hidden {
+            opacity: 0;
+        }
+
+        .chart-empty-state-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            opacity: 0.5;
         }
 
         .simulator-form {
@@ -747,6 +783,11 @@
                     <div class="card-icon purple">&#128200;</div>
                 </div>
                 <div class="chart-container">
+                    <div class="chart-empty-state" id="timeline-empty">
+                        <div class="chart-empty-state-icon">&#128200;</div>
+                        <div>Aucune donnée</div>
+                        <div>Lancez une simulation</div>
+                    </div>
                     <canvas id="timelineChart"></canvas>
                 </div>
             </div>
@@ -757,6 +798,11 @@
                     <div class="card-icon blue">&#128202;</div>
                 </div>
                 <div class="chart-container">
+                    <div class="chart-empty-state" id="types-empty">
+                        <div class="chart-empty-state-icon">&#128202;</div>
+                        <div>Aucune donnée</div>
+                        <div>Lancez une simulation</div>
+                    </div>
                     <canvas id="attackTypesChart"></canvas>
                 </div>
             </div>
@@ -767,6 +813,11 @@
                     <div class="card-icon green">&#128737;</div>
                 </div>
                 <div class="chart-container">
+                    <div class="chart-empty-state" id="defense-empty">
+                        <div class="chart-empty-state-icon">&#128737;</div>
+                        <div>Aucune donnée</div>
+                        <div>Lancez une simulation</div>
+                    </div>
                     <canvas id="defenseChart"></canvas>
                 </div>
             </div>
@@ -829,9 +880,9 @@
             </div>
 
             <!-- Right sidebar -->
-            <div>
+            <div class="sidebar">
                 <!-- Security Level -->
-                <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card">
                     <div class="card-header">
                         <span class="card-title">Security Level</span>
                         <span id="current-level" style="color: var(--accent-yellow);">MEDIUM</span>
@@ -851,7 +902,7 @@
                 </div>
 
                 <!-- Quick Stats -->
-                <div class="card" style="margin-bottom: 1.5rem;">
+                <div class="card">
                     <div class="card-header">
                         <span class="card-title">Real-time Stats</span>
                     </div>
@@ -1301,6 +1352,45 @@
 
             defenseChart.data.datasets[0].data = [blocked, detected, Math.max(0, passed)];
             defenseChart.update('none');
+
+            // Update attack types chart (based on attack history)
+            updateAttackTypesChart(attacks);
+
+            // Toggle empty states based on data
+            const hasTimelineData = timelineChart.data.labels.length > 0 &&
+                (timelineChart.data.datasets[0].data.some(v => v > 0) ||
+                 timelineChart.data.datasets[1].data.some(v => v > 0));
+            const hasDefenseData = blocked > 0 || detected > 0 || passed > 0;
+            const hasTypesData = attacks.total_attacks > 0;
+
+            toggleEmptyState('timeline-empty', hasTimelineData);
+            toggleEmptyState('defense-empty', hasDefenseData);
+            toggleEmptyState('types-empty', hasTypesData);
+        }
+
+        // Toggle empty state visibility
+        function toggleEmptyState(elementId, hasData) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                if (hasData) {
+                    element.classList.add('hidden');
+                } else {
+                    element.classList.remove('hidden');
+                }
+            }
+        }
+
+        // Update attack types chart based on attack stats
+        function updateAttackTypesChart(attacks) {
+            if (attacks.by_type) {
+                const types = Object.keys(attacks.by_type);
+                const counts = Object.values(attacks.by_type);
+                if (types.length > 0) {
+                    attackTypesChart.data.labels = types;
+                    attackTypesChart.data.datasets[0].data = counts;
+                    attackTypesChart.update('none');
+                }
+            }
         }
 
         // Reset simulator
@@ -1319,6 +1409,14 @@
 
                 defenseChart.data.datasets[0].data = [0, 0, 0];
                 defenseChart.update();
+
+                attackTypesChart.data.datasets[0].data = [0, 0, 0, 0, 0];
+                attackTypesChart.update();
+
+                // Show empty states
+                toggleEmptyState('timeline-empty', false);
+                toggleEmptyState('defense-empty', false);
+                toggleEmptyState('types-empty', false);
 
                 document.getElementById('response-panel').classList.remove('visible');
             } catch (e) {
