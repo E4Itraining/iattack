@@ -26,6 +26,16 @@ NC='\033[0m' # No Color
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
+# Déterminer la commande Python à utiliser
+if command -v python3 &> /dev/null; then
+    PYTHON=python3
+elif command -v python &> /dev/null; then
+    PYTHON=python
+else
+    echo -e "${RED}Python non trouvé. Veuillez installer Python 3.${NC}"
+    exit 1
+fi
+
 echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN}  LLM Attack Lab - Test Runner${NC}"
 echo -e "${CYAN}========================================${NC}"
@@ -35,9 +45,9 @@ echo ""
 check_dependencies() {
     echo -e "${YELLOW}Vérification des dépendances...${NC}"
 
-    if ! python -c "import pytest" 2>/dev/null; then
+    if ! $PYTHON -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        pip install pytest pytest-watch pytest-cov
+        $PYTHON -m pip install pytest pytest-watch pytest-cov
     fi
 
     echo -e "${GREEN}Dépendances OK${NC}"
@@ -49,7 +59,7 @@ run_tests() {
     echo -e "${CYAN}Exécution des tests...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    $PYTHON -m pytest tests/ \
         -v \
         --tb=short \
         -x \
@@ -66,7 +76,7 @@ run_watch() {
     echo ""
 
     # pytest-watch surveille les fichiers et relance les tests automatiquement
-    python -m pytest_watch -- tests/ \
+    $PYTHON -m pytest_watch -- tests/ \
         -v \
         --tb=short \
         -x
@@ -77,7 +87,7 @@ run_coverage() {
     echo -e "${CYAN}Exécution des tests avec couverture...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    $PYTHON -m pytest tests/ \
         -v \
         --tb=short \
         --cov=llm_attack_lab \
@@ -93,7 +103,7 @@ run_unit() {
     echo -e "${CYAN}Exécution des tests unitaires...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    $PYTHON -m pytest tests/ \
         -v \
         --tb=short \
         -m "unit" \
@@ -105,7 +115,7 @@ run_integration() {
     echo -e "${CYAN}Exécution des tests d'intégration...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    $PYTHON -m pytest tests/ \
         -v \
         --tb=short \
         -m "integration"
@@ -116,7 +126,7 @@ run_web() {
     echo -e "${CYAN}Exécution des tests Web/API...${NC}"
     echo ""
 
-    python -m pytest tests/test_web_api.py \
+    $PYTHON -m pytest tests/test_web_api.py \
         -v \
         --tb=short
 }
