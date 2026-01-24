@@ -1910,11 +1910,16 @@
 
         // Start single test run
         async function startTests() {
+            const streamContainer = document.getElementById('test-results-stream');
+            streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Connecting to stream...</div>';
+
             try {
                 // Wait for stream connection BEFORE starting tests
                 await connectTestStream();
+                streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Stream connected. Starting tests...</div>';
+
                 // Small delay to ensure stream is fully ready
-                await new Promise(resolve => setTimeout(resolve, 100));
+                await new Promise(resolve => setTimeout(resolve, 200));
 
                 const response = await fetch('/api/tests/start', {
                     method: 'POST',
@@ -1922,20 +1927,30 @@
                     body: JSON.stringify({ args: [] })
                 });
                 const result = await response.json();
+                console.log('Test start result:', result);
+
                 if (result.status === 'already_running') {
                     alert('Tests are already running');
+                } else if (result.status === 'started') {
+                    updateTestStatusUI(true);
+                    streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Tests started (run #' + result.run_id + '). Waiting for results...</div>';
                 }
             } catch (e) {
                 console.error('Failed to start tests:', e);
+                streamContainer.innerHTML = '<div style="color: var(--accent-red);">Error: ' + e.message + '</div>';
             }
         }
 
         // Start continuous test running with interval
         async function startContinuousTests() {
+            const streamContainer = document.getElementById('test-results-stream');
+            streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Connecting to stream...</div>';
+
             try {
                 // Wait for stream connection BEFORE starting tests
                 await connectTestStream();
-                await new Promise(resolve => setTimeout(resolve, 100));
+                streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Stream connected. Starting continuous tests...</div>';
+                await new Promise(resolve => setTimeout(resolve, 200));
 
                 const interval = parseInt(document.getElementById('test-interval').value) || 30;
                 const durationMinutes = parseInt(document.getElementById('test-duration').value) || 0;
@@ -1952,22 +1967,32 @@
                     })
                 });
                 const result = await response.json();
+                console.log('Continuous test start result:', result);
+
                 if (result.status === 'already_running') {
                     alert('Tests are already running');
-                } else {
+                } else if (result.status === 'started') {
+                    updateTestStatusUI(true);
                     startTimeTracking();
+                    const durationInfo = maxDuration > 0 ? ` for ${durationMinutes} min` : '';
+                    streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Continuous tests started (every ' + interval + 's' + durationInfo + '). Waiting for results...</div>';
                 }
             } catch (e) {
                 console.error('Failed to start continuous tests:', e);
+                streamContainer.innerHTML = '<div style="color: var(--accent-red);">Error: ' + e.message + '</div>';
             }
         }
 
         // Start infinite (non-stop) test running
         async function startInfiniteTests() {
+            const streamContainer = document.getElementById('test-results-stream');
+            streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Connecting to stream...</div>';
+
             try {
                 // Wait for stream connection BEFORE starting tests
                 await connectTestStream();
-                await new Promise(resolve => setTimeout(resolve, 100));
+                streamContainer.innerHTML = '<div style="color: var(--accent-cyan);">Stream connected. Starting non-stop tests...</div>';
+                await new Promise(resolve => setTimeout(resolve, 200));
 
                 const durationMinutes = parseInt(document.getElementById('test-duration').value) || 0;
                 const maxDuration = durationMinutes * 60; // Convert to seconds
@@ -1983,13 +2008,19 @@
                     })
                 });
                 const result = await response.json();
+                console.log('Infinite test start result:', result);
+
                 if (result.status === 'already_running') {
                     alert('Tests are already running');
-                } else {
+                } else if (result.status === 'started') {
+                    updateTestStatusUI(true);
                     startTimeTracking();
+                    const durationInfo = maxDuration > 0 ? ` (limit: ${durationMinutes} min)` : ' (no limit)';
+                    streamContainer.innerHTML = '<div style="color: var(--accent-purple);">Non-stop tests started' + durationInfo + '. Waiting for results...</div>';
                 }
             } catch (e) {
                 console.error('Failed to start infinite tests:', e);
+                streamContainer.innerHTML = '<div style="color: var(--accent-red);">Error: ' + e.message + '</div>';
             }
         }
 
