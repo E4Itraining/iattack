@@ -13,7 +13,7 @@
 # - ./run_tests.sh coverage: Exécuter avec rapport de couverture
 #
 
-set -e
+# Ne pas utiliser set -e car pytest retourne un code d'erreur si des tests échouent
 
 # Couleurs pour l'affichage
 RED='\033[0;31m'
@@ -45,6 +45,12 @@ echo ""
 check_dependencies() {
     echo -e "${YELLOW}Vérification des dépendances...${NC}"
 
+    # Installer les dépendances du projet si nécessaire
+    if ! $PYTHON -c "import flask" 2>/dev/null; then
+        echo -e "${YELLOW}Installation des dépendances du projet...${NC}"
+        $PYTHON -m pip install -r requirements.txt
+    fi
+
     if ! $PYTHON -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
         $PYTHON -m pip install pytest pytest-cov watchdog
@@ -64,14 +70,26 @@ run_tests() {
     echo -e "${CYAN}Exécution des tests...${NC}"
     echo ""
 
+    # Vérifier d'abord que les imports fonctionnent
+    if ! $PYTHON -c "from llm_attack_lab.core.llm_simulator import LLMSimulator" 2>&1; then
+        echo -e "${RED}Erreur d'import - installez les dépendances:${NC}"
+        echo -e "${YELLOW}pip3 install -r requirements.txt${NC}"
+        return 1
+    fi
+
     $PYTHON -m pytest tests/ \
         -v \
         --tb=short \
         -x \
         --strict-markers
 
+    local result=$?
     echo ""
-    echo -e "${GREEN}Tests terminés!${NC}"
+    if [ $result -eq 0 ]; then
+        echo -e "${GREEN}Tous les tests passent!${NC}"
+    else
+        echo -e "${RED}Certains tests ont échoué.${NC}"
+    fi
 }
 
 # Exécuter les tests en mode watch (continu)
