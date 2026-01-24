@@ -168,14 +168,25 @@ class ContinuousTestRunner:
         self.run_thread: Optional[threading.Thread] = None
         self.current_run_id = 0
         self.run_interval = 0  # 0 means single run, >0 means continuous
+        self.max_duration = 0  # 0 means no limit, >0 means stop after X seconds
+        self.run_start_time = 0  # Timestamp when continuous run started
         self.subscribers: List[queue.Queue] = []
         self._lock = threading.Lock()
+        # Event buffer for new subscribers (stores last N events)
+        self._event_buffer: List[dict] = []
+        self._buffer_max_size = 100
 
     def subscribe(self) -> queue.Queue:
-        """Subscribe to test events"""
+        """Subscribe to test events and receive buffered events"""
         subscriber_queue = queue.Queue()
         with self._lock:
             self.subscribers.append(subscriber_queue)
+            # Send buffered events to new subscriber
+            for event in self._event_buffer:
+                try:
+                    subscriber_queue.put_nowait(event)
+                except queue.Full:
+                    pass
         return subscriber_queue
 
     def unsubscribe(self, subscriber_queue: queue.Queue):
@@ -185,8 +196,14 @@ class ContinuousTestRunner:
                 self.subscribers.remove(subscriber_queue)
 
     def _broadcast_event(self, event: dict):
-        """Broadcast event to all subscribers"""
+        """Broadcast event to all subscribers and buffer it"""
         with self._lock:
+            # Add to buffer (keep last N events)
+            self._event_buffer.append(event)
+            if len(self._event_buffer) > self._buffer_max_size:
+                self._event_buffer.pop(0)
+
+            # Broadcast to subscribers
             dead_subscribers = []
             for sub_queue in self.subscribers:
                 try:
@@ -196,31 +213,59 @@ class ContinuousTestRunner:
             for dead in dead_subscribers:
                 self.subscribers.remove(dead)
 
-    def start_continuous(self, interval: float = 30.0, test_args: Optional[List[str]] = None):
-        """Start continuous test running"""
+    def clear_event_buffer(self):
+        """Clear the event buffer (called at start of new run)"""
+        with self._lock:
+            self._event_buffer = []
+
+    def start_continuous(self, interval: float = 30.0, test_args: Optional[List[str]] = None,
+                         max_duration: float = 0, infinite: bool = False):
+        """Start continuous test running
+
+        Args:
+            interval: Time between test runs in seconds (default 30)
+            test_args: Additional pytest arguments
+            max_duration: Maximum total duration in seconds (0 = no limit)
+            infinite: If True, run continuously until stopped (interval=0 between runs)
+        """
         if self.is_running:
             return {"status": "already_running", "run_id": self.current_run_id}
 
-        self.run_interval = interval
+        # Clear event buffer for new run
+        self.clear_event_buffer()
+
+        self.run_interval = 0 if infinite else interval
+        self.max_duration = max_duration
+        self.run_start_time = time.time()
         self.should_stop = False
         self.current_run_id += 1
 
         self.run_thread = threading.Thread(
             target=self._continuous_run_loop,
-            args=(test_args or [],),
+            args=(test_args or [], infinite),
             daemon=True
         )
         self.run_thread.start()
         self.is_running = True
 
-        return {"status": "started", "run_id": self.current_run_id, "interval": interval}
+        return {
+            "status": "started",
+            "run_id": self.current_run_id,
+            "interval": self.run_interval,
+            "max_duration": max_duration,
+            "infinite": infinite
+        }
 
     def start_single_run(self, test_args: Optional[List[str]] = None):
         """Start a single test run"""
         if self.is_running:
             return {"status": "already_running", "run_id": self.current_run_id}
 
+        # Clear event buffer for new run
+        self.clear_event_buffer()
+
         self.run_interval = 0
+        self.max_duration = 0
         self.should_stop = False
         self.current_run_id += 1
 
@@ -246,12 +291,24 @@ class ContinuousTestRunner:
 
     def get_status(self) -> dict:
         """Get current runner status"""
+        elapsed = 0
+        remaining = 0
+        if self.is_running and self.run_start_time > 0:
+            elapsed = time.time() - self.run_start_time
+            if self.max_duration > 0:
+                remaining = max(0, self.max_duration - elapsed)
+
         return {
             "is_running": self.is_running,
             "run_id": self.current_run_id,
-            "continuous": self.run_interval > 0,
+            "continuous": self.run_interval > 0 or (self.is_running and self.max_duration > 0),
             "interval": self.run_interval,
+            "max_duration": self.max_duration,
+            "elapsed_seconds": round(elapsed, 1) if self.is_running else 0,
+            "remaining_seconds": round(remaining, 1) if self.max_duration > 0 else 0,
+            "infinite": self.run_interval == 0 and self.is_running and self.max_duration == 0,
             "subscribers": len(self.subscribers),
+            "buffered_events": len(self._event_buffer),
         }
 
     def _single_run(self, test_args: List[str]):
@@ -261,16 +318,48 @@ class ContinuousTestRunner:
         finally:
             self.is_running = False
 
-    def _continuous_run_loop(self, test_args: List[str]):
-        """Main loop for continuous test execution"""
-        try:
-            while not self.should_stop:
-                self._execute_tests(test_args)
+    def _continuous_run_loop(self, test_args: List[str], infinite: bool = False):
+        """Main loop for continuous test execution
 
-                if self.run_interval > 0 and not self.should_stop:
-                    # Wait for next run with periodic checks for stop signal
+        Args:
+            test_args: pytest arguments
+            infinite: If True, run tests back-to-back without interval
+        """
+        try:
+            run_count = 0
+            while not self.should_stop:
+                # Check if max duration exceeded
+                if self.max_duration > 0:
+                    elapsed = time.time() - self.run_start_time
+                    if elapsed >= self.max_duration:
+                        self._broadcast_event({
+                            "type": "duration_limit_reached",
+                            "data": {
+                                "run_id": self.current_run_id,
+                                "total_runs": run_count,
+                                "elapsed_seconds": elapsed
+                            },
+                            "timestamp": time.time(),
+                        })
+                        break
+
+                self._execute_tests(test_args)
+                run_count += 1
+
+                # Handle different modes
+                if infinite:
+                    # Infinite mode: small pause to prevent CPU overload, then continue
+                    time.sleep(0.5)
+                    continue
+                elif self.run_interval > 0 and not self.should_stop:
+                    # Interval mode: wait for next run with periodic checks
                     wait_time = 0
                     while wait_time < self.run_interval and not self.should_stop:
+                        # Also check max duration during wait
+                        if self.max_duration > 0:
+                            elapsed = time.time() - self.run_start_time
+                            if elapsed >= self.max_duration:
+                                break
                         time.sleep(min(1.0, self.run_interval - wait_time))
                         wait_time += 1.0
                 else:

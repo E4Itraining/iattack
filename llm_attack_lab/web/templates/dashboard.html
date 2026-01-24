@@ -1144,17 +1144,30 @@
 
             <div class="test-controls">
                 <button class="btn btn-primary" id="btn-start-tests" onclick="startTests()">
-                    Run Tests
+                    Run Once
                 </button>
                 <button class="btn btn-secondary" id="btn-start-continuous" onclick="startContinuousTests()">
-                    Continuous
+                    Run with Interval
+                </button>
+                <button class="btn btn-primary" id="btn-start-infinite" onclick="startInfiniteTests()" style="background: var(--accent-purple);">
+                    Non-Stop
                 </button>
                 <button class="btn btn-danger" id="btn-stop-tests" onclick="stopTests()" disabled>
                     Stop
                 </button>
-                <div style="margin-left: auto; display: flex; align-items: center; gap: 0.5rem;">
+            </div>
+            <div class="test-controls" style="margin-top: 0.5rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
                     <label class="form-label" style="margin: 0;">Interval (s):</label>
                     <input type="number" class="form-input" id="test-interval" value="30" min="5" max="300" style="width: 80px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Duration (min):</label>
+                    <input type="number" class="form-input" id="test-duration" value="0" min="0" max="1440" style="width: 80px;" placeholder="0=unlimited">
+                </div>
+                <div id="time-display" style="margin-left: auto; display: flex; align-items: center; gap: 1rem; color: var(--text-secondary); font-size: 0.875rem;">
+                    <span id="elapsed-time"></span>
+                    <span id="remaining-time"></span>
                 </div>
             </div>
 
@@ -1681,38 +1694,47 @@
         let testResults = [];
         let testSummary = { total: 0, passed: 0, failed: 0, skipped: 0, duration: 0 };
 
-        // Connect to test event stream
+        // Connect to test event stream - returns a Promise that resolves when connected
         function connectTestStream() {
-            if (testEventSource) {
-                testEventSource.close();
-            }
-
-            testEventSource = new EventSource('/api/tests/stream');
-
-            testEventSource.onopen = function() {
-                document.getElementById('stream-status').className = 'stream-connected';
-                document.getElementById('stream-status').title = 'Stream connected';
-            };
-
-            testEventSource.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    handleTestEvent(data);
-                } catch (e) {
-                    console.error('Failed to parse test event:', e);
+            return new Promise((resolve, reject) => {
+                if (testEventSource) {
+                    testEventSource.close();
                 }
-            };
 
-            testEventSource.onerror = function() {
-                document.getElementById('stream-status').className = 'stream-disconnected';
-                document.getElementById('stream-status').title = 'Stream disconnected';
-                // Try to reconnect after a delay
-                setTimeout(() => {
-                    if (testEventSource && testEventSource.readyState === EventSource.CLOSED) {
-                        connectTestStream();
-                    }
+                testEventSource = new EventSource('/api/tests/stream');
+                let connectionTimeout = setTimeout(() => {
+                    reject(new Error('Connection timeout'));
                 }, 5000);
-            };
+
+                testEventSource.onopen = function() {
+                    clearTimeout(connectionTimeout);
+                    document.getElementById('stream-status').className = 'stream-connected';
+                    document.getElementById('stream-status').title = 'Stream connected';
+                    console.log('SSE stream connected');
+                    resolve();
+                };
+
+                testEventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleTestEvent(data);
+                    } catch (e) {
+                        console.error('Failed to parse test event:', e);
+                    }
+                };
+
+                testEventSource.onerror = function() {
+                    clearTimeout(connectionTimeout);
+                    document.getElementById('stream-status').className = 'stream-disconnected';
+                    document.getElementById('stream-status').title = 'Stream disconnected';
+                    // Try to reconnect after a delay
+                    setTimeout(() => {
+                        if (testEventSource && testEventSource.readyState === EventSource.CLOSED) {
+                            connectTestStream().catch(e => console.log('Reconnect failed:', e));
+                        }
+                    }, 5000);
+                };
+            });
         }
 
         // Handle test events
@@ -1757,6 +1779,13 @@
 
                 case 'run_stopped':
                     streamContainer.innerHTML += '<div style="color: var(--accent-yellow); margin-top: 1rem;">Test run stopped</div>';
+                    updateTestStatusUI(false);
+                    break;
+
+                case 'duration_limit_reached':
+                    const mins = Math.floor(event.data.elapsed_seconds / 60);
+                    const secs = Math.floor(event.data.elapsed_seconds % 60);
+                    streamContainer.innerHTML += `<div style="color: var(--accent-cyan); margin-top: 1rem; font-weight: bold;">Duration limit reached (${mins}m ${secs}s) - ${event.data.total_runs} runs completed</div>`;
                     updateTestStatusUI(false);
                     break;
             }
@@ -1854,6 +1883,7 @@
             const indicator = document.getElementById('test-status-indicator');
             const btnStart = document.getElementById('btn-start-tests');
             const btnContinuous = document.getElementById('btn-start-continuous');
+            const btnInfinite = document.getElementById('btn-start-infinite');
             const btnStop = document.getElementById('btn-stop-tests');
 
             if (isRunning) {
@@ -1863,6 +1893,7 @@
                 indicator.className = 'test-status-indicator running';
                 btnStart.disabled = true;
                 btnContinuous.disabled = true;
+                btnInfinite.disabled = true;
                 btnStop.disabled = false;
             } else {
                 dot.style.background = 'var(--text-muted)';
@@ -1871,14 +1902,20 @@
                 indicator.className = 'test-status-indicator stopped';
                 btnStart.disabled = false;
                 btnContinuous.disabled = false;
+                btnInfinite.disabled = false;
                 btnStop.disabled = true;
+                stopTimeTracking();
             }
         }
 
         // Start single test run
         async function startTests() {
-            connectTestStream();
             try {
+                // Wait for stream connection BEFORE starting tests
+                await connectTestStream();
+                // Small delay to ensure stream is fully ready
+                await new Promise(resolve => setTimeout(resolve, 100));
+
                 const response = await fetch('/api/tests/start', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -1893,22 +1930,114 @@
             }
         }
 
-        // Start continuous test running
+        // Start continuous test running with interval
         async function startContinuousTests() {
-            connectTestStream();
-            const interval = parseInt(document.getElementById('test-interval').value) || 30;
             try {
+                // Wait for stream connection BEFORE starting tests
+                await connectTestStream();
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const interval = parseInt(document.getElementById('test-interval').value) || 30;
+                const durationMinutes = parseInt(document.getElementById('test-duration').value) || 0;
+                const maxDuration = durationMinutes * 60; // Convert to seconds
+
                 const response = await fetch('/api/tests/start-continuous', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ interval: interval, args: [] })
+                    body: JSON.stringify({
+                        interval: interval,
+                        max_duration: maxDuration,
+                        infinite: false,
+                        args: []
+                    })
                 });
                 const result = await response.json();
                 if (result.status === 'already_running') {
                     alert('Tests are already running');
+                } else {
+                    startTimeTracking();
                 }
             } catch (e) {
                 console.error('Failed to start continuous tests:', e);
+            }
+        }
+
+        // Start infinite (non-stop) test running
+        async function startInfiniteTests() {
+            try {
+                // Wait for stream connection BEFORE starting tests
+                await connectTestStream();
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const durationMinutes = parseInt(document.getElementById('test-duration').value) || 0;
+                const maxDuration = durationMinutes * 60; // Convert to seconds
+
+                const response = await fetch('/api/tests/start-continuous', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        interval: 0,
+                        max_duration: maxDuration,
+                        infinite: true,
+                        args: []
+                    })
+                });
+                const result = await response.json();
+                if (result.status === 'already_running') {
+                    alert('Tests are already running');
+                } else {
+                    startTimeTracking();
+                }
+            } catch (e) {
+                console.error('Failed to start infinite tests:', e);
+            }
+        }
+
+        // Time tracking variables
+        let timeTrackingInterval = null;
+
+        function startTimeTracking() {
+            if (timeTrackingInterval) {
+                clearInterval(timeTrackingInterval);
+            }
+            timeTrackingInterval = setInterval(updateTimeDisplay, 1000);
+        }
+
+        function stopTimeTracking() {
+            if (timeTrackingInterval) {
+                clearInterval(timeTrackingInterval);
+                timeTrackingInterval = null;
+            }
+            document.getElementById('elapsed-time').textContent = '';
+            document.getElementById('remaining-time').textContent = '';
+        }
+
+        async function updateTimeDisplay() {
+            try {
+                const response = await fetch('/api/tests/status');
+                const status = await response.json();
+
+                if (status.is_running) {
+                    const elapsed = status.elapsed_seconds || 0;
+                    const elapsedMins = Math.floor(elapsed / 60);
+                    const elapsedSecs = Math.floor(elapsed % 60);
+                    document.getElementById('elapsed-time').textContent = `Elapsed: ${elapsedMins}m ${elapsedSecs}s`;
+
+                    if (status.max_duration > 0) {
+                        const remaining = status.remaining_seconds || 0;
+                        const remainingMins = Math.floor(remaining / 60);
+                        const remainingSecs = Math.floor(remaining % 60);
+                        document.getElementById('remaining-time').textContent = `Remaining: ${remainingMins}m ${remainingSecs}s`;
+                    } else if (status.infinite) {
+                        document.getElementById('remaining-time').textContent = '(Non-stop mode)';
+                    } else {
+                        document.getElementById('remaining-time').textContent = '';
+                    }
+                } else {
+                    stopTimeTracking();
+                }
+            } catch (e) {
+                console.log('Failed to update time display:', e);
             }
         }
 
@@ -1916,6 +2045,7 @@
         async function stopTests() {
             try {
                 await fetch('/api/tests/stop', { method: 'POST' });
+                stopTimeTracking();
             } catch (e) {
                 console.error('Failed to stop tests:', e);
             }
@@ -1928,8 +2058,10 @@
                 .then(res => res.json())
                 .then(status => {
                     if (status.is_running) {
-                        connectTestStream();
-                        updateTestStatusUI(true);
+                        connectTestStream().then(() => {
+                            updateTestStatusUI(true);
+                            startTimeTracking();
+                        }).catch(e => console.log('Stream connection failed:', e));
                     }
                 })
                 .catch(e => console.log('Test status check failed:', e));
