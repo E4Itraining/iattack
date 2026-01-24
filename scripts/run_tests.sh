@@ -71,17 +71,14 @@ run_tests() {
     echo ""
 
     # Vérifier d'abord que les imports fonctionnent
-    if ! $PYTHON -c "from llm_attack_lab.core.llm_simulator import LLMSimulator" 2>&1; then
+    if ! $PYTHON -c "from llm_attack_lab.core.llm_simulator import LLMSimulator" 2>/dev/null; then
         echo -e "${RED}Erreur d'import - installez les dépendances:${NC}"
         echo -e "${YELLOW}pip3 install -r requirements.txt${NC}"
         return 1
     fi
 
-    $PYTHON -m pytest tests/ \
-        -v \
-        --tb=short \
-        -x \
-        --strict-markers
+    # Exécuter les tests avec sortie visible
+    $PYTHON -m pytest tests/ --no-header
 
     local result=$?
     echo ""
