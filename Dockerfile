@@ -28,13 +28,13 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY llm_attack_lab/ ./llm_attack_lab/
 
 # Expose ports
-# 8080: Web interface
+# 8081: Web interface
 # 8000: Metrics endpoint
-EXPOSE 8080 8000
+EXPOSE 8081 8000
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost:8080/api/status || exit 1
+    CMD curl -f http://localhost:8081/api/status || exit 1
 
 # Default command: Web server mode
 CMD ["python", "-m", "llm_attack_lab", "--web"]

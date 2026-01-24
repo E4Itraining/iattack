@@ -284,7 +284,7 @@ def ready():
     return jsonify({'status': 'ready'})
 
 
-def run_web_server(host='0.0.0.0', port=8080, debug=None):
+def run_web_server(host='0.0.0.0', port=8081, debug=None):
     """Run the web server"""
     # Use environment variable for debug mode, default to False in production
     if debug is None:
