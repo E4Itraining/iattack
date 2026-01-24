@@ -35,9 +35,9 @@ echo ""
 check_dependencies() {
     echo -e "${YELLOW}Vérification des dépendances...${NC}"
 
-    if ! python -c "import pytest" 2>/dev/null; then
+    if ! python3 -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        python -m pip install pytest pytest-watch pytest-cov
+        python3 -m pip install pytest pytest-watch pytest-cov
     fi
 
     echo -e "${GREEN}Dépendances OK${NC}"
@@ -49,7 +49,7 @@ run_tests() {
     echo -e "${CYAN}Exécution des tests...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    python3 -m pytest tests/ \
         -v \
         --tb=short \
         -x \
@@ -66,7 +66,7 @@ run_watch() {
     echo ""
 
     # pytest-watch surveille les fichiers et relance les tests automatiquement
-    python -m pytest_watch -- tests/ \
+    python3 -m pytest_watch -- tests/ \
         -v \
         --tb=short \
         -x
@@ -77,7 +77,7 @@ run_coverage() {
     echo -e "${CYAN}Exécution des tests avec couverture...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    python3 -m pytest tests/ \
         -v \
         --tb=short \
         --cov=llm_attack_lab \
@@ -93,7 +93,7 @@ run_unit() {
     echo -e "${CYAN}Exécution des tests unitaires...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    python3 -m pytest tests/ \
         -v \
         --tb=short \
         -m "unit" \
@@ -105,7 +105,7 @@ run_integration() {
     echo -e "${CYAN}Exécution des tests d'intégration...${NC}"
     echo ""
 
-    python -m pytest tests/ \
+    python3 -m pytest tests/ \
         -v \
         --tb=short \
         -m "integration"
@@ -116,7 +116,7 @@ run_web() {
     echo -e "${CYAN}Exécution des tests Web/API...${NC}"
     echo ""
 
-    python -m pytest tests/test_web_api.py \
+    python3 -m pytest tests/test_web_api.py \
         -v \
         --tb=short
 }
