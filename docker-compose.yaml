@@ -1,8 +1,6 @@
 # Docker Compose for LLM Attack Lab with Full Observability Stack
 # Includes: App, Grafana, VictoriaMetrics, OpenTelemetry Collector
 
-version: '3.8'
-
 services:
   # ===========================================
   # LLM Attack Lab Application
