@@ -303,12 +303,26 @@ def start_tests():
 
 @app.route('/api/tests/start-continuous', methods=['POST'])
 def start_continuous_tests():
-    """Start continuous test running"""
+    """Start continuous test running
+
+    JSON body options:
+        interval: Time between runs in seconds (default 30, ignored if infinite=true)
+        max_duration: Maximum total duration in seconds (0 = no limit)
+        infinite: If true, run tests continuously without interval
+        args: Additional pytest arguments
+    """
     data = request.get_json() or {}
     interval = data.get('interval', 30.0)
+    max_duration = data.get('max_duration', 0)
+    infinite = data.get('infinite', False)
     test_args = data.get('args', [])
     runner = get_test_runner()
-    result = runner.start_continuous(interval=interval, test_args=test_args)
+    result = runner.start_continuous(
+        interval=interval,
+        test_args=test_args,
+        max_duration=max_duration,
+        infinite=infinite
+    )
     return jsonify(result)
 
 
@@ -354,7 +368,8 @@ def run_web_server(host='0.0.0.0', port=8081, debug=None):
     if OTEL_ENABLED:
         print(f"Prometheus metrics available on port 8000")
 
-    app.run(host=host, port=port, debug=debug)
+    # threaded=True is REQUIRED for SSE streaming to work properly
+    app.run(host=host, port=port, debug=debug, threaded=True)
 
 
 if __name__ == '__main__':
