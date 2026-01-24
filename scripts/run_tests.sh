@@ -47,7 +47,12 @@ check_dependencies() {
 
     if ! $PYTHON -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        $PYTHON -m pip install pytest pytest-watch pytest-cov
+        $PYTHON -m pip install pytest pytest-cov watchdog
+    fi
+
+    if ! $PYTHON -c "import watchdog" 2>/dev/null; then
+        echo -e "${YELLOW}Installation de watchdog pour le mode watch...${NC}"
+        $PYTHON -m pip install watchdog
     fi
 
     echo -e "${GREEN}Dépendances OK${NC}"
@@ -75,11 +80,34 @@ run_watch() {
     echo -e "${YELLOW}Appuyez sur Ctrl+C pour arrêter${NC}"
     echo ""
 
-    # pytest-watch surveille les fichiers et relance les tests automatiquement
-    $PYTHON -m pytest_watch -- tests/ \
-        -v \
-        --tb=short \
-        -x
+    # Exécuter les tests une première fois
+    $PYTHON -m pytest tests/ -v --tb=short -x || true
+
+    echo ""
+    echo -e "${CYAN}En attente de modifications...${NC}"
+    echo ""
+
+    # Utiliser watchmedo de watchdog pour surveiller les fichiers
+    if $PYTHON -c "import watchdog" 2>/dev/null; then
+        $PYTHON -m watchdog.watchmedo shell-command \
+            --patterns="*.py" \
+            --recursive \
+            --command='echo -e "\n\033[0;36m[$(date +%H:%M:%S)] Changement détecté, relance des tests...\033[0m\n" && '"$PYTHON"' -m pytest tests/ -v --tb=short -x || true' \
+            llm_attack_lab/ tests/
+    else
+        # Fallback: boucle simple avec polling
+        echo -e "${YELLOW}watchdog non installé, utilisation du mode polling (moins efficace)${NC}"
+        LAST_HASH=""
+        while true; do
+            CURRENT_HASH=$(find llm_attack_lab tests -name "*.py" -exec md5sum {} \; 2>/dev/null | md5sum)
+            if [ "$CURRENT_HASH" != "$LAST_HASH" ] && [ -n "$LAST_HASH" ]; then
+                echo -e "\n${CYAN}[$(date +%H:%M:%S)] Changement détecté, relance des tests...${NC}\n"
+                $PYTHON -m pytest tests/ -v --tb=short -x || true
+            fi
+            LAST_HASH=$CURRENT_HASH
+            sleep 2
+        done
+    fi
 }
 
 # Exécuter avec couverture de code
