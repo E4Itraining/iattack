@@ -1,0 +1,5 @@
+"""Web interface for LLM Attack Lab"""
+
+from .app import run_web_server
+
+__all__ = ["run_web_server"]
