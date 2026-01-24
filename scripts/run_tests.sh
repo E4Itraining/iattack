@@ -144,19 +144,19 @@ show_help() {
 check_dependencies
 
 case "${1:-}" in
-    watch)
+    watch|--watch|-w)
         run_watch
         ;;
-    coverage)
+    coverage|--coverage|-c)
         run_coverage
         ;;
-    unit)
+    unit|--unit|-u)
         run_unit
         ;;
-    integration)
+    integration|--integration|-i)
         run_integration
         ;;
-    web)
+    web|--web)
         run_web
         ;;
     help|--help|-h)
