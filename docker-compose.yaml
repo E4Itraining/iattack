@@ -1,0 +1,137 @@
+# Docker Compose for LLM Attack Lab with Full Observability Stack
+# Includes: App, Grafana, VictoriaMetrics, OpenTelemetry Collector
+
+version: '3.8'
+
+services:
+  # ===========================================
+  # LLM Attack Lab Application
+  # ===========================================
+  llm-attack-lab:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: llm-attack-lab
+    ports:
+      - "8080:8080"   # Web interface
+      - "8000:8000"   # Prometheus metrics
+    environment:
+      - FLASK_DEBUG=false
+      - OTEL_SERVICE_NAME=llm-attack-lab
+      - OTEL_SERVICE_VERSION=1.0.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_ENABLE_TRACING=true
+      - OTEL_ENABLE_METRICS=true
+      - PROMETHEUS_METRICS_PORT=8000
+      - ENVIRONMENT=production
+    depends_on:
+      - otel-collector
+    networks:
+      - monitoring
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===========================================
+  # OpenTelemetry Collector
+  # Receives traces and metrics, exports to backends
+  # ===========================================
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: otel-collector
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    volumes:
+      - ./config/otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8888:8888"   # Prometheus metrics exposed by collector
+      - "8889:8889"   # Prometheus exporter metrics
+      - "13133:13133" # Health check extension
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - victoriametrics
+
+  # ===========================================
+  # VictoriaMetrics
+  # Time-series database for metrics storage
+  # ===========================================
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.96.0
+    container_name: victoriametrics
+    ports:
+      - "8428:8428"   # HTTP API and web interface
+    volumes:
+      - victoriametrics-data:/storage
+    command:
+      - "--storageDataPath=/storage"
+      - "--httpListenAddr=:8428"
+      - "--retentionPeriod=30d"
+      - "--selfScrapeInterval=10s"
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # ===========================================
+  # Grafana
+  # Visualization and dashboards
+  # ===========================================
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=llmattacklab
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_DOMAIN=localhost
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./config/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./config/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - victoriametrics
+
+  # ===========================================
+  # vmagent (Optional - for advanced scraping)
+  # Scrapes Prometheus endpoints and sends to VM
+  # ===========================================
+  vmagent:
+    image: victoriametrics/vmagent:v1.96.0
+    container_name: vmagent
+    ports:
+      - "8429:8429"
+    volumes:
+      - ./config/vmagent.yaml:/etc/prometheus/prometheus.yml:ro
+      - vmagent-data:/vmagentdata
+    command:
+      - "--promscrape.config=/etc/prometheus/prometheus.yml"
+      - "--remoteWrite.url=http://victoriametrics:8428/api/v1/write"
+      - "--httpListenAddr=:8429"
+    networks:
+      - monitoring
+    restart: unless-stopped
+    depends_on:
+      - victoriametrics
+      - llm-attack-lab
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  victoriametrics-data:
+  grafana-data:
+  vmagent-data:

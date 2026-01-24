@@ -1,0 +1,41 @@
+# Grafana Datasources Provisioning
+# Auto-configures VictoriaMetrics as the default datasource
+
+apiVersion: 1
+
+datasources:
+  # VictoriaMetrics as primary metrics source
+  - name: VictoriaMetrics
+    type: prometheus
+    access: proxy
+    url: http://victoriametrics:8428
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: "2.47.0"
+      cacheLevel: 'High'
+      disableRecordingRules: false
+      incrementalQueryOverlapWindow: 10m
+
+  # OTel Collector Prometheus exporter
+  - name: OTel-Collector
+    type: prometheus
+    access: proxy
+    url: http://otel-collector:8889
+    isDefault: false
+    editable: false
+    jsonData:
+      httpMethod: GET
+
+  # LLM Attack Lab direct metrics
+  - name: LLM-Attack-Lab
+    type: prometheus
+    access: proxy
+    url: http://llm-attack-lab:8000
+    isDefault: false
+    editable: false
+    jsonData:
+      httpMethod: GET
