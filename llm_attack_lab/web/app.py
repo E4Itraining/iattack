@@ -5,14 +5,19 @@ Provides a visual interface for exploring and simulating LLM attacks.
 """
 
 import json
+import time
 from flask import Flask, render_template, request, jsonify
 from llm_attack_lab.core.llm_simulator import LLMSimulator, SecurityLevel
 from llm_attack_lab.attacks import ATTACK_REGISTRY
+from llm_attack_lab.monitoring.metrics import get_metrics_collector
+from llm_attack_lab.monitoring.logger import get_logger
 
 app = Flask(__name__, template_folder='templates', static_folder='static')
 
-# Global simulator instance
+# Global instances
 simulator = LLMSimulator()
+metrics = get_metrics_collector()
+logger = get_logger("web")
 
 
 @app.route('/')
@@ -76,8 +81,16 @@ def simulate():
     except KeyError:
         pass
 
-    # Process input
+    # Process input with timing
+    start_time = time.time()
     response, metadata = simulator.process_input(user_input)
+    duration = time.time() - start_time
+
+    # Record metrics
+    metrics.record_request(duration, blocked=metadata.get('compromised', False))
+    if metadata.get('attacks_detected'):
+        for attack in metadata['attacks_detected']:
+            metrics.increment("web_attacks_detected", labels={"type": attack['type']})
 
     return jsonify({
         'response': response,
@@ -114,7 +127,32 @@ def _get_level_description(level: SecurityLevel) -> str:
 def reset():
     """Reset the simulator"""
     simulator.reset()
+    metrics.reset()
     return jsonify({'status': 'ok', 'message': 'Simulator reset'})
+
+
+@app.route('/api/metrics')
+def get_metrics():
+    """Get all monitoring metrics"""
+    return jsonify(metrics.get_all_metrics())
+
+
+@app.route('/api/metrics/attacks')
+def get_attack_metrics():
+    """Get attack-specific metrics"""
+    return jsonify(metrics.get_attack_summary())
+
+
+@app.route('/api/metrics/defenses')
+def get_defense_metrics():
+    """Get defense-specific metrics"""
+    return jsonify(metrics.get_defense_summary())
+
+
+@app.route('/api/metrics/prometheus')
+def get_prometheus_metrics():
+    """Export metrics in Prometheus format"""
+    return metrics.export_prometheus(), 200, {'Content-Type': 'text/plain'}
 
 
 def run_web_server(host='0.0.0.0', port=8080, debug=True):

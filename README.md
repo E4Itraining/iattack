@@ -1,4 +1,4 @@
-# LLM Attack Simulation Lab 🔬
+# LLM Attack Simulation Lab
 
 Un laboratoire interactif pour comprendre et simuler les attaques sur les Large Language Models (LLMs).
 

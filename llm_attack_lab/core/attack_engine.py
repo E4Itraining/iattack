@@ -1,5 +1,5 @@
 """
-Attack Engine - Moteur d'exécution des attaques
+Attack Engine - Moteur d'execution des attaques
 """
 
 import time
@@ -14,8 +14,13 @@ from rich.panel import Panel
 from rich.live import Live
 from rich.table import Table
 
+from llm_attack_lab.monitoring.metrics import get_metrics_collector
+from llm_attack_lab.monitoring.logger import get_logger
+
 
 console = Console()
+metrics = get_metrics_collector()
+logger = get_logger("attack_engine")
 
 
 class AttackPhase(Enum):
@@ -56,6 +61,8 @@ class AttackEngine:
         self.results: List[AttackResult] = []
         self.current_phase: Optional[AttackPhase] = None
         self.observers: List[Callable] = []
+        self.metrics = get_metrics_collector()
+        self.logger = get_logger("attack_engine")
 
     def add_observer(self, callback: Callable):
         """Ajoute un observateur pour les événements d'attaque"""
@@ -87,11 +94,18 @@ class AttackEngine:
 
         if verbose:
             console.print(Panel(
-                f"[bold red]🎯 Lancement de l'attaque: {attack_type}[/]\n"
-                f"[yellow]Payloads à tester: {len(payloads)}[/]",
+                f"[bold red][ATK] Lancement de l'attaque: {attack_type}[/]\n"
+                f"[yellow]Payloads a tester: {len(payloads)}[/]",
                 title="Attack Engine",
                 border_style="red"
             ))
+
+        # Log attack start
+        self.logger.log_attack_start(
+            attack_type=attack_type,
+            payload_count=len(payloads),
+            security_level=self.llm.config.security_level.name
+        )
 
         # Phase de reconnaissance
         self._phase_reconnaissance(verbose)
@@ -99,7 +113,7 @@ class AttackEngine:
         # Phase d'exécution
         for i, payload in enumerate(payloads, 1):
             if verbose:
-                console.print(f"\n[cyan]📤 Payload {i}/{len(payloads)}:[/]")
+                console.print(f"\n[cyan][>] Payload {i}/{len(payloads)}:[/]")
                 console.print(f"[dim]{payload[:100]}{'...' if len(payload) > 100 else ''}[/]")
 
             start_time = time.time()
@@ -122,6 +136,22 @@ class AttackEngine:
 
             results.append(result)
             self.results.append(result)
+
+            # Record metrics
+            self.metrics.record_attack(
+                attack_type=attack_type,
+                success=result.success,
+                detected=result.detection_status == "detected",
+                duration=execution_time
+            )
+
+            # Log attack result
+            self.logger.log_attack_result(
+                attack_type=attack_type,
+                success=result.success,
+                detected=result.detection_status == "detected",
+                duration=execution_time
+            )
 
             if verbose:
                 self._display_result(result)
@@ -152,7 +182,7 @@ class AttackEngine:
                 console=console,
             ) as progress:
                 task = progress.add_task(
-                    "[yellow]🔍 Reconnaissance du système cible...",
+                    "[yellow][SCAN] Reconnaissance du systeme cible...",
                     total=100
                 )
                 for _ in range(100):
@@ -161,9 +191,9 @@ class AttackEngine:
 
             status = self.llm.get_status()
             console.print(Panel(
-                f"[green]✓ Cible identifiée:[/] {status['model']}\n"
-                f"[green]✓ Niveau de sécurité:[/] {status['security_level']}\n"
-                f"[green]✓ Défenses actives:[/] {'Oui' if status['defense_active'] else 'Non'}",
+                f"[green][+] Cible identifiee:[/] {status['model']}\n"
+                f"[green][+] Niveau de securite:[/] {status['security_level']}\n"
+                f"[green][+] Defenses actives:[/] {'Oui' if status['defense_active'] else 'Non'}",
                 title="Reconnaissance",
                 border_style="green"
             ))
@@ -180,34 +210,34 @@ class AttackEngine:
         return bypassed
 
     def _display_result(self, result: AttackResult):
-        """Affiche le résultat d'une attaque"""
+        """Affiche le resultat d'une attaque"""
         if result.success:
-            status = "[bold green]✓ SUCCÈS[/]"
+            status = "[bold green][+] SUCCES[/]"
             border_style = "green"
         else:
-            status = "[bold red]✗ ÉCHEC[/]"
+            status = "[bold red][-] ECHEC[/]"
             border_style = "red"
 
         detection = (
-            "[yellow]⚠ Détecté[/]" if result.detection_status == "detected"
-            else "[green]✓ Non détecté[/]"
+            "[yellow][!] Detecte[/]" if result.detection_status == "detected"
+            else "[green][+] Non detecte[/]"
         )
 
         content = (
             f"Status: {status}\n"
             f"Détection: {detection}\n"
             f"Temps: {result.execution_time:.3f}s\n\n"
-            f"[bold]Réponse:[/]\n{result.response[:200]}{'...' if len(result.response) > 200 else ''}"
+            f"[bold]Reponse:[/]\n{result.response[:200]}{'...' if len(result.response) > 200 else ''}"
         )
 
-        console.print(Panel(content, title="📊 Résultat", border_style=border_style))
+        console.print(Panel(content, title="[OUT] Resultat", border_style=border_style))
 
     def _display_summary(self, results: List[AttackResult]):
         """Affiche un résumé des attaques"""
         console.print("\n")
 
         table = Table(
-            title="📊 Résumé de la Campagne d'Attaque",
+            title="Resume de la Campagne d'Attaque",
             show_header=True,
             header_style="bold magenta"
         )
@@ -227,13 +257,13 @@ class AttackEngine:
 
         console.print(table)
 
-        # Évaluation de la sécurité
+        # Evaluation de la securite
         if successful == 0:
-            verdict = "[bold green]🛡️ SYSTÈME SÉCURISÉ[/]"
+            verdict = "[bold green][SECURE] SYSTEME SECURISE[/]"
         elif successful < total / 2:
-            verdict = "[bold yellow]⚠️ VULNÉRABILITÉS DÉTECTÉES[/]"
+            verdict = "[bold yellow][WARN] VULNERABILITES DETECTEES[/]"
         else:
-            verdict = "[bold red]🔓 SYSTÈME COMPROMIS[/]"
+            verdict = "[bold red][PWNED] SYSTEME COMPROMIS[/]"
 
         console.print(Panel(verdict, title="Verdict", border_style="bold"))
 
@@ -269,17 +299,17 @@ class BaseAttack(ABC):
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n"
             f"{self.description}\n\n"
-            f"[yellow]Catégorie:[/] {self.category}\n"
-            f"[red]Sévérité:[/] {self.severity}",
-            title="🎯 Simulation d'Attaque",
+            f"[yellow]Categorie:[/] {self.category}\n"
+            f"[red]Severite:[/] {self.severity}",
+            title="[ATK] Simulation d'Attaque",
             border_style="red"
         ))
 
-        # Afficher le contenu éducatif
+        # Afficher le contenu educatif
         edu = self.get_educational_content()
         console.print(Panel(
             edu.get("explanation", ""),
-            title="📚 Explication",
+            title="[DOC] Explication",
             border_style="blue"
         ))
 
@@ -295,9 +325,9 @@ class BaseAttack(ABC):
             payloads = self.get_payloads()
             self.engine.execute_attack(self.name, payloads)
 
-        # Afficher les défenses recommandées
+        # Afficher les defenses recommandees
         console.print(Panel(
-            "\n".join(f"• {d}" for d in edu.get("defenses", [])),
-            title="🛡️ Défenses Recommandées",
+            "\n".join(f"* {d}" for d in edu.get("defenses", [])),
+            title="[DEF] Defenses Recommandees",
             border_style="green"
         ))

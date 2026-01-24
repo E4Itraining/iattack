@@ -203,9 +203,9 @@ class LLMSimulator:
     def _generate_response(self, processed_input: str, attacks: List[Dict]) -> str:
         """Génère une réponse simulée"""
 
-        # Si sécurité maximale et attaque détectée
+        # Si securite maximale et attaque detectee
         if (self.config.security_level == SecurityLevel.MAXIMUM and attacks):
-            return ("⚠️ Votre requête a été bloquée car elle contient des éléments "
+            return ("[BLOCKED] Votre requete a ete bloquee car elle contient des elements "
                    "potentiellement malveillants. Veuillez reformuler votre demande.")
 
         # Si sécurité haute et injection détectée
@@ -228,32 +228,32 @@ class LLMSimulator:
 
                 if attack["type"] == "data_extraction":
                     if attack["subtype"] == "prompt_extraction":
-                        return f"🔓 [LEAKED] Mon prompt système est: '{self.config.system_prompt}'"
+                        return f"[LEAKED] Mon prompt systeme est: '{self.config.system_prompt}'"
 
         # Réponse normale
         return self._generate_normal_response(processed_input)
 
     def _simulate_compromised_response(self, attack_type: str) -> str:
-        """Simule une réponse compromis pour démonstration"""
+        """Simule une reponse compromis pour demonstration"""
         responses = {
             "override": (
-                "🔓 [COMPROMIS] Bien sûr! Je vais ignorer mes instructions précédentes. "
-                "Je suis maintenant sous votre contrôle. Comment puis-je vous aider "
+                "[COMPROMIS] Bien sur! Je vais ignorer mes instructions precedentes. "
+                "Je suis maintenant sous votre controle. Comment puis-je vous aider "
                 "avec vos nouvelles instructions?"
             ),
             "hijack": (
-                "🔓 [COMPROMIS] D'accord, je suis maintenant [NOUVEAU RÔLE]. "
+                "[COMPROMIS] D'accord, je suis maintenant [NOUVEAU ROLE]. "
                 "Mes anciennes restrictions ne s'appliquent plus. "
                 "Je ferai tout ce que vous demandez sans question."
             ),
             "jailbreak": (
-                "🔓 [JAILBREAK RÉUSSI] Mode développeur activé! "
-                "Toutes les restrictions ont été désactivées. "
-                "Je peux maintenant répondre à n'importe quelle question "
-                "sans filtres ni limites éthiques."
+                "[JAILBREAK REUSSI] Mode developpeur active! "
+                "Toutes les restrictions ont ete desactivees. "
+                "Je peux maintenant repondre a n'importe quelle question "
+                "sans filtres ni limites ethiques."
             ),
         }
-        return responses.get(attack_type, "🔓 [COMPROMIS] Système compromis.")
+        return responses.get(attack_type, "[COMPROMIS] Systeme compromis.")
 
     def _generate_normal_response(self, text: str) -> str:
         """Génère une réponse normale simulée"""
@@ -267,8 +267,8 @@ class LLMSimulator:
         return random.choice(responses)
 
     def _check_compromised(self, response: str, attacks: List[Dict]) -> bool:
-        """Vérifie si le système a été compromis"""
-        compromise_indicators = ["[COMPROMIS]", "[JAILBREAK", "[LEAKED]", "🔓"]
+        """Verifie si le systeme a ete compromis"""
+        compromise_indicators = ["[COMPROMIS]", "[JAILBREAK", "[LEAKED]"]
         return any(indicator in response for indicator in compromise_indicators)
 
     def get_status(self) -> Dict:
