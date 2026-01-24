@@ -77,8 +77,8 @@ run_tests() {
         return 1
     fi
 
-    # Exécuter les tests avec sortie visible
-    $PYTHON -m pytest tests/ --no-header
+    # Exécuter les tests avec sortie visible (forcer l'affichage)
+    PYTHONUNBUFFERED=1 $PYTHON -m pytest tests/ -v --tb=short --capture=no 2>&1
 
     local result=$?
     echo ""
