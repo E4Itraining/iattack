@@ -23,7 +23,8 @@ services:
       - PROMETHEUS_METRICS_PORT=8000
       - ENVIRONMENT=production
     depends_on:
-      - otel-collector
+      otel-collector:
+        condition: service_healthy
     networks:
       - monitoring
     restart: unless-stopped
@@ -53,6 +54,12 @@ services:
     networks:
       - monitoring
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
     depends_on:
       - victoriametrics
 

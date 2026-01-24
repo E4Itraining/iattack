@@ -60,6 +60,15 @@ class OTelConfig:
         self.enable_tracing = os.getenv("OTEL_ENABLE_TRACING", "true").lower() == "true"
         self.enable_metrics = os.getenv("OTEL_ENABLE_METRICS", "true").lower() == "true"
 
+        # Retry and timeout configuration
+        self.otlp_timeout_seconds = int(os.getenv("OTEL_EXPORTER_OTLP_TIMEOUT", "30"))
+        self.export_timeout_millis = int(os.getenv("OTEL_EXPORT_TIMEOUT_MILLIS", "30000"))
+        self.max_queue_size = int(os.getenv("OTEL_BSP_MAX_QUEUE_SIZE", "2048"))
+        self.max_export_batch_size = int(os.getenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE", "512"))
+        self.schedule_delay_millis = int(os.getenv("OTEL_BSP_SCHEDULE_DELAY_MILLIS", "5000"))
+        self.metrics_export_interval_millis = int(os.getenv("OTEL_METRIC_EXPORT_INTERVAL", "15000"))
+        self.collector_wait_timeout = int(os.getenv("OTEL_COLLECTOR_WAIT_TIMEOUT", "60"))
+
 
 class OTelManager:
     """
@@ -119,24 +128,57 @@ class OTelManager:
             return False
 
     def _init_tracing(self, resource):
-        """Initialize tracing provider"""
+        """Initialize tracing provider with retry configuration"""
         tracer_provider = TracerProvider(resource=resource)
 
         try:
-            otlp_exporter = OTLPSpanExporter(endpoint=self.config.otlp_endpoint, insecure=True)
-            tracer_provider.add_span_processor(BatchSpanProcessor(otlp_exporter))
+            # Configure OTLP exporter with timeout
+            otlp_exporter = OTLPSpanExporter(
+                endpoint=self.config.otlp_endpoint,
+                insecure=True,
+                timeout=self.config.otlp_timeout_seconds,
+            )
+
+            # Configure BatchSpanProcessor with retry-friendly settings
+            span_processor = BatchSpanProcessor(
+                otlp_exporter,
+                max_queue_size=self.config.max_queue_size,
+                max_export_batch_size=self.config.max_export_batch_size,
+                schedule_delay_millis=self.config.schedule_delay_millis,
+                export_timeout_millis=self.config.export_timeout_millis,
+            )
+            tracer_provider.add_span_processor(span_processor)
+            logger.info(
+                f"OTLP trace exporter configured: endpoint={self.config.otlp_endpoint}, "
+                f"timeout={self.config.otlp_timeout_seconds}s, queue_size={self.config.max_queue_size}"
+            )
         except Exception as e:
-            logger.warning(f"Could not connect to OTLP endpoint: {e}")
+            logger.warning(f"Could not connect to OTLP endpoint for tracing: {e}")
 
         trace.set_tracer_provider(tracer_provider)
         self._tracer = trace.get_tracer(self.config.service_name)
 
     def _init_metrics(self, resource):
-        """Initialize metrics provider"""
+        """Initialize metrics provider with retry configuration"""
         try:
-            otlp_metric_exporter = OTLPMetricExporter(endpoint=self.config.otlp_endpoint, insecure=True)
-            metric_reader = PeriodicExportingMetricReader(otlp_metric_exporter, export_interval_millis=10000)
+            # Configure OTLP metric exporter with timeout
+            otlp_metric_exporter = OTLPMetricExporter(
+                endpoint=self.config.otlp_endpoint,
+                insecure=True,
+                timeout=self.config.otlp_timeout_seconds,
+            )
+
+            # Configure PeriodicExportingMetricReader with retry-friendly settings
+            metric_reader = PeriodicExportingMetricReader(
+                otlp_metric_exporter,
+                export_interval_millis=self.config.metrics_export_interval_millis,
+                export_timeout_millis=self.config.export_timeout_millis,
+            )
             meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+            logger.info(
+                f"OTLP metric exporter configured: endpoint={self.config.otlp_endpoint}, "
+                f"timeout={self.config.otlp_timeout_seconds}s, interval={self.config.metrics_export_interval_millis}ms"
+            )
         except Exception as e:
             logger.warning(f"Could not create OTLP metric exporter: {e}")
             meter_provider = MeterProvider(resource=resource)
