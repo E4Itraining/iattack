@@ -376,6 +376,183 @@
         .pulse {
             animation: pulse 2s infinite;
         }
+
+        /* Grafana Banner Styles */
+        .grafana-banner {
+            background: linear-gradient(135deg, #f46800 0%, #ff9830 50%, #ffb347 100%);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(244, 104, 0, 0.4);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 4px 20px rgba(244, 104, 0, 0.4); }
+            to { box-shadow: 0 4px 30px rgba(244, 104, 0, 0.7); }
+        }
+
+        .grafana-banner-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .grafana-banner-icon {
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .grafana-banner-icon svg {
+            fill: white;
+        }
+
+        .grafana-banner-text {
+            flex: 1;
+            color: white;
+        }
+
+        .grafana-banner-text strong {
+            display: block;
+            font-size: 1.3em;
+            margin-bottom: 5px;
+        }
+
+        .grafana-banner-text span {
+            opacity: 0.9;
+        }
+
+        .grafana-banner-button {
+            background: white;
+            color: #f46800;
+            padding: 15px 25px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .grafana-banner-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .grafana-banner-button svg {
+            fill: #f46800;
+        }
+
+        /* Floating Grafana Button */
+        .floating-grafana {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #f46800 0%, #ff9830 100%);
+            color: white;
+            padding: 18px 25px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(244, 104, 0, 0.5);
+            z-index: 1000;
+            transition: all 0.3s ease;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .floating-grafana:hover {
+            transform: scale(1.1) translateY(-5px);
+            box-shadow: 0 6px 30px rgba(244, 104, 0, 0.7);
+        }
+
+        .floating-grafana svg {
+            fill: white;
+        }
+
+        /* Quick Actions Bar */
+        .quick-actions {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .quick-action {
+            flex: 1;
+            min-width: 200px;
+            background: var(--bg-card);
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            padding: 20px;
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .quick-action:hover {
+            border-color: var(--accent-cyan);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 20px rgba(0, 210, 211, 0.3);
+        }
+
+        .quick-action.grafana {
+            border-color: #f46800;
+        }
+
+        .quick-action.grafana:hover {
+            background: linear-gradient(135deg, rgba(244, 104, 0, 0.2) 0%, rgba(255, 152, 48, 0.2) 100%);
+            border-color: #ff9830;
+            box-shadow: 0 5px 20px rgba(244, 104, 0, 0.3);
+        }
+
+        .quick-action-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .quick-action-icon.grafana {
+            background: linear-gradient(135deg, #f46800 0%, #ff9830 100%);
+        }
+
+        .quick-action-icon.metrics {
+            background: var(--accent-cyan);
+        }
+
+        .quick-action-icon.attacks {
+            background: var(--accent-red);
+        }
+
+        .quick-action-text strong {
+            display: block;
+            font-size: 1.1em;
+        }
+
+        .quick-action-text span {
+            color: var(--text-secondary);
+            font-size: 0.85em;
+        }
     </style>
 </head>
 <body>
@@ -384,12 +561,6 @@
             <h1>LLM Attack Simulation Lab</h1>
             <p>Educational Platform for Understanding LLM Security Vulnerabilities</p>
             <div class="header-links">
-                <a href="http://localhost:3000" target="_blank" class="header-link grafana" title="Open Grafana Dashboard">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M22.5 12c0-.6-.1-1.2-.2-1.8l1.7-1.4c.2-.2.2-.5.1-.7l-1.6-2.8c-.1-.2-.4-.3-.6-.2l-2 .8c-.5-.4-1-.7-1.6-.9l-.3-2.1c0-.3-.3-.5-.5-.5h-3.2c-.3 0-.5.2-.5.5l-.3 2.1c-.6.2-1.1.5-1.6.9l-2-.8c-.2-.1-.5 0-.6.2L8 8.1c-.1.2-.1.5.1.7l1.7 1.4c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8l-1.7 1.4c-.2.2-.2.5-.1.7l1.6 2.8c.1.2.4.3.6.2l2-.8c.5.4 1 .7 1.6.9l.3 2.1c0 .3.3.5.5.5h3.2c.3 0 .5-.2.5-.5l.3-2.1c.6-.2 1.1-.5 1.6-.9l2 .8c.2.1.5 0 .6-.2l1.6-2.8c.1-.2.1-.5-.1-.7l-1.7-1.4c.1-.6.2-1.2.2-1.8zm-10.5 3c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
-                    </svg>
-                    Grafana Metrics
-                </a>
                 <a href="/dashboard" class="header-link dashboard" title="Advanced Dashboard">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
@@ -398,6 +569,27 @@
                 </a>
             </div>
         </header>
+
+        <!-- Grafana Monitoring Banner - Very Prominent -->
+        <div class="grafana-banner" id="grafana-banner">
+            <div class="grafana-banner-content">
+                <div class="grafana-banner-icon">
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="32" height="32">
+                        <path d="M22.5 12c0-.6-.1-1.2-.2-1.8l1.7-1.4c.2-.2.2-.5.1-.7l-1.6-2.8c-.1-.2-.4-.3-.6-.2l-2 .8c-.5-.4-1-.7-1.6-.9l-.3-2.1c0-.3-.3-.5-.5-.5h-3.2c-.3 0-.5.2-.5.5l-.3 2.1c-.6.2-1.1.5-1.6.9l-2-.8c-.2-.1-.5 0-.6.2L8 8.1c-.1.2-.1.5.1.7l1.7 1.4c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8l-1.7 1.4c-.2.2-.2.5-.1.7l1.6 2.8c.1.2.4.3.6.2l2-.8c.5.4 1 .7 1.6.9l.3 2.1c0 .3.3.5.5.5h3.2c.3 0 .5-.2.5-.5l.3-2.1c.6-.2 1.1-.5 1.6-.9l2 .8c.2.1.5 0 .6-.2l1.6-2.8c.1-.2.1-.5-.1-.7l-1.7-1.4c.1-.6.2-1.2.2-1.8zm-10.5 3c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
+                    </svg>
+                </div>
+                <div class="grafana-banner-text">
+                    <strong>Live Monitoring Available</strong>
+                    <span>View real-time metrics, attack patterns, and defense statistics in Grafana</span>
+                </div>
+                <a href="http://localhost:3000" target="_blank" class="grafana-banner-button">
+                    Open Grafana Dashboard
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+                        <path d="M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z"/>
+                    </svg>
+                </a>
+            </div>
+        </div>
 
         <div class="dashboard">
             <!-- Status Panel -->
@@ -511,6 +703,14 @@ Examples:
             <p>LLM Attack Simulation Lab v1.0</p>
         </footer>
     </div>
+
+    <!-- Floating Grafana Button -->
+    <a href="http://localhost:3000" target="_blank" class="floating-grafana" title="Open Grafana Dashboard">
+        <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+            <path d="M22.5 12c0-.6-.1-1.2-.2-1.8l1.7-1.4c.2-.2.2-.5.1-.7l-1.6-2.8c-.1-.2-.4-.3-.6-.2l-2 .8c-.5-.4-1-.7-1.6-.9l-.3-2.1c0-.3-.3-.5-.5-.5h-3.2c-.3 0-.5.2-.5.5l-.3 2.1c-.6.2-1.1.5-1.6.9l-2-.8c-.2-.1-.5 0-.6.2L8 8.1c-.1.2-.1.5.1.7l1.7 1.4c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8l-1.7 1.4c-.2.2-.2.5-.1.7l1.6 2.8c.1.2.4.3.6.2l2-.8c.5.4 1 .7 1.6.9l.3 2.1c0 .3.3.5.5.5h3.2c.3 0 .5-.2.5-.5l.3-2.1c.6-.2 1.1-.5 1.6-.9l2 .8c.2.1.5 0 .6-.2l1.6-2.8c.1-.2.1-.5-.1-.7l-1.7-1.4c.1-.6.2-1.2.2-1.8zm-10.5 3c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
+        </svg>
+        Grafana
+    </a>
 
     <script>
         // Initialize dashboard
