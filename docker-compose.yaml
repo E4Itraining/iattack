@@ -55,11 +55,11 @@ services:
       - monitoring
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/"]
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
       interval: 5s
       timeout: 5s
       retries: 10
-      start_period: 5s
+      start_period: 10s
     depends_on:
       - victoriametrics
 
