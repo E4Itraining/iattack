@@ -43,7 +43,7 @@ python -m llm_attack_lab --interactive
 ### Mode Dashboard Web
 ```bash
 python -m llm_attack_lab --web
-# Ouvrir http://localhost:8080
+# Ouvrir http://localhost:8081
 ```
 
 ### Exécuter une simulation spécifique
