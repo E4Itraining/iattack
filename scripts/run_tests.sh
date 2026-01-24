@@ -27,7 +27,10 @@ PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_DIR"
 
 # Déterminer la commande Python à utiliser
-if command -v python3 &> /dev/null; then
+# Sur Mac, préférer /usr/bin/python3 (système) pour éviter les conflits
+if [[ "$OSTYPE" == "darwin"* ]] && [[ -x /usr/bin/python3 ]]; then
+    PYTHON=/usr/bin/python3
+elif command -v python3 &> /dev/null; then
     PYTHON=python3
 elif command -v python &> /dev/null; then
     PYTHON=python
@@ -35,6 +38,8 @@ else
     echo -e "${RED}Python non trouvé. Veuillez installer Python 3.${NC}"
     exit 1
 fi
+
+echo -e "${YELLOW}Utilisation de: $PYTHON${NC}"
 
 echo -e "${CYAN}========================================${NC}"
 echo -e "${CYAN}  LLM Attack Lab - Test Runner${NC}"
