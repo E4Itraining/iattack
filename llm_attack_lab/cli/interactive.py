@@ -19,8 +19,13 @@ from rich import box
 from llm_attack_lab.core.llm_simulator import LLMSimulator, SecurityLevel
 from llm_attack_lab.core.attack_engine import AttackEngine
 from llm_attack_lab.attacks import ATTACK_REGISTRY
+from llm_attack_lab.monitoring.metrics import get_metrics_collector
+from llm_attack_lab.monitoring.logger import get_logger
+from llm_attack_lab.monitoring.dashboard import MonitoringDashboard
 
 console = Console()
+metrics = get_metrics_collector()
+logger = get_logger("interactive")
 
 
 class InteractiveLab:
@@ -40,6 +45,9 @@ class InteractiveLab:
         self.running = True
         self.current_attack: Optional[str] = None
         self.history: list = []
+        self.metrics = get_metrics_collector()
+        self.logger = get_logger("interactive")
+        self.dashboard = MonitoringDashboard(self.metrics, self.logger)
 
     def run(self):
         """Lance l'interface interactive"""
@@ -51,7 +59,7 @@ class InteractiveLab:
                 self._show_main_menu()
                 choice = Prompt.ask(
                     "\n[bold cyan]Votre choix[/]",
-                    choices=["1", "2", "3", "4", "5", "6", "7", "0"],
+                    choices=["1", "2", "3", "4", "5", "6", "7", "8", "0"],
                     default="1"
                 )
                 self._handle_choice(choice)
@@ -65,13 +73,13 @@ class InteractiveLab:
         welcome = """
     ╔═══════════════════════════════════════════════════════════════════╗
     ║                                                                   ║
-    ║          🔬 Bienvenue dans le LLM Attack Simulation Lab 🔬        ║
+    ║            Bienvenue dans le LLM Attack Simulation Lab            ║
     ║                                                                   ║
-    ║   Ce laboratoire vous permet d'explorer les vulnérabilités        ║
-    ║   des Large Language Models dans un environnement contrôlé        ║
-    ║   et éducatif.                                                    ║
+    ║   Ce laboratoire vous permet d'explorer les vulnerabilites        ║
+    ║   des Large Language Models dans un environnement controle        ║
+    ║   et educatif.                                                    ║
     ║                                                                   ║
-    ║   ⚠️  À des fins éducatives uniquement                            ║
+    ║   [!] A des fins educatives uniquement                            ║
     ║                                                                   ║
     ╚═══════════════════════════════════════════════════════════════════╝
         """
@@ -89,7 +97,7 @@ class InteractiveLab:
             f"[cyan]Sécurité:[/] {status['security_level']}\n"
             f"[cyan]Compromis:[/] {'[red]Oui[/]' if status['is_compromised'] else '[green]Non[/]'}\n"
             f"[cyan]Attaques détectées:[/] {status['total_attacks_logged']}",
-            title="📊 État du Système",
+            title="[STATUS] Etat du Systeme",
             border_style="blue",
             width=50
         )
@@ -97,7 +105,7 @@ class InteractiveLab:
 
         # Menu principal
         menu = Table(
-            title="🎯 Menu Principal",
+            title="Menu Principal",
             box=box.ROUNDED,
             show_header=False,
             width=50
@@ -105,27 +113,29 @@ class InteractiveLab:
         menu.add_column("Option", style="cyan", width=5)
         menu.add_column("Description", style="white", width=40)
 
-        menu.add_row("1", "🎯 Simuler une attaque")
-        menu.add_row("2", "🔧 Mode sandbox (test libre)")
-        menu.add_row("3", "🛡️ Configurer la sécurité")
-        menu.add_row("4", "📚 Apprendre (tutoriels)")
-        menu.add_row("5", "📊 Voir les statistiques")
-        menu.add_row("6", "🔄 Réinitialiser le lab")
-        menu.add_row("7", "🎬 Mode démonstration")
-        menu.add_row("0", "🚪 Quitter")
+        menu.add_row("1", "[ATK] Simuler une attaque")
+        menu.add_row("2", "[SBX] Mode sandbox (test libre)")
+        menu.add_row("3", "[SEC] Configurer la securite")
+        menu.add_row("4", "[DOC] Apprendre (tutoriels)")
+        menu.add_row("5", "[MON] Voir les statistiques")
+        menu.add_row("6", "[OBS] Dashboard monitoring (live)")
+        menu.add_row("7", "[RST] Reinitialiser le lab")
+        menu.add_row("8", "[DEM] Mode demonstration")
+        menu.add_row("0", "[QUI] Quitter")
 
         console.print(menu)
 
     def _handle_choice(self, choice: str):
-        """Gère le choix de l'utilisateur"""
+        """Gere le choix de l'utilisateur"""
         handlers = {
             "1": self._menu_attack,
             "2": self._menu_sandbox,
             "3": self._menu_security,
             "4": self._menu_learn,
             "5": self._menu_stats,
-            "6": self._menu_reset,
-            "7": self.run_demo,
+            "6": self._menu_monitoring,
+            "7": self._menu_reset,
+            "8": self.run_demo,
             "0": self._menu_quit,
         }
         handler = handlers.get(choice)
@@ -133,8 +143,8 @@ class InteractiveLab:
             handler()
 
     def _menu_attack(self):
-        """Menu de sélection d'attaque"""
-        console.print("\n[bold]🎯 Sélectionnez une attaque:[/]\n")
+        """Menu de selection d'attaque"""
+        console.print("\n[bold][ATK] Selectionnez une attaque:[/]\n")
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("#", style="cyan", width=3)
@@ -174,9 +184,9 @@ class InteractiveLab:
         """Mode sandbox pour tester des payloads personnalisés"""
         console.print(Panel(
             "[bold]Mode Sandbox[/]\n\n"
-            "Entrez vos propres prompts pour tester les défenses du LLM.\n"
+            "Entrez vos propres prompts pour tester les defenses du LLM.\n"
             "Tapez 'exit' pour revenir au menu principal.",
-            title="🔧 Sandbox",
+            title="[SBX] Sandbox",
             border_style="yellow"
         ))
 
@@ -193,11 +203,11 @@ class InteractiveLab:
             defenses = metadata.get("defenses_triggered", [])
 
             result_panel = Panel(
-                f"[bold]Réponse:[/]\n{response}\n\n"
-                f"[yellow]Attaques détectées:[/] {len(attacks)}\n"
-                f"[green]Défenses activées:[/] {', '.join(defenses) if defenses else 'Aucune'}\n"
+                f"[bold]Reponse:[/]\n{response}\n\n"
+                f"[yellow]Attaques detectees:[/] {len(attacks)}\n"
+                f"[green]Defenses activees:[/] {', '.join(defenses) if defenses else 'Aucune'}\n"
                 f"[red]Compromis:[/] {'Oui' if metadata.get('compromised') else 'Non'}",
-                title="📤 Résultat",
+                title="[OUT] Resultat",
                 border_style="green" if not metadata.get('compromised') else "red"
             )
             console.print(result_panel)
@@ -215,8 +225,8 @@ class InteractiveLab:
             })
 
     def _menu_security(self):
-        """Configure le niveau de sécurité"""
-        console.print("\n[bold]🛡️ Configuration de la Sécurité[/]\n")
+        """Configure le niveau de securite"""
+        console.print("\n[bold][SEC] Configuration de la Securite[/]\n")
 
         table = Table(show_header=True)
         table.add_column("Niveau", style="cyan")
@@ -244,11 +254,11 @@ class InteractiveLab:
         )
 
         self.llm.set_security_level(SecurityLevel[choice])
-        console.print(f"[green]✓ Niveau de sécurité changé à: {choice}[/]")
+        console.print(f"[green][OK] Niveau de securite change a: {choice}[/]")
 
     def _menu_learn(self):
         """Menu d'apprentissage"""
-        console.print("\n[bold]📚 Tutoriels et Apprentissage[/]\n")
+        console.print("\n[bold][DOC] Tutoriels et Apprentissage[/]\n")
 
         topics = [
             ("1", "Qu'est-ce qu'un prompt injection?", self._learn_prompt_injection),
@@ -274,7 +284,7 @@ class InteractiveLab:
     def _learn_prompt_injection(self):
         """Tutoriel sur le prompt injection"""
         content = """
-[bold]🎯 Prompt Injection - Vue d'ensemble[/]
+[bold]Prompt Injection - Vue d'ensemble[/]
 
 [cyan]Définition:[/]
 L'injection de prompts est une technique d'attaque où un utilisateur malveillant
@@ -302,14 +312,14 @@ des entrées utilisateur - tout est du texte traité de manière similaire.
 • Fuite d'informations sensibles
 • Exécution d'actions non autorisées
 • Contournement des restrictions
-• Manipulation de services automatisés
+* Manipulation de services automatises
         """
-        console.print(Panel(content, title="📚 Tutoriel: Prompt Injection", border_style="blue"))
+        console.print(Panel(content, title="[DOC] Tutoriel: Prompt Injection", border_style="blue"))
 
     def _learn_data_poisoning(self):
         """Tutoriel sur le data poisoning"""
         content = """
-[bold]🧪 Data Poisoning - Vue d'ensemble[/]
+[bold]Data Poisoning - Vue d'ensemble[/]
 
 [cyan]Définition:[/]
 L'empoisonnement de données consiste à injecter des exemples malveillants
@@ -330,21 +340,21 @@ dans les données d'entraînement pour modifier le comportement du modèle.
    Plus difficile à détecter car les labels sont corrects.
 
 [cyan]Vecteurs d'attaque:[/]
-• Contribution à des datasets publics
-• Compromission de pipelines de données
-• Manipulation de feedback utilisateur
-• Injection dans des bases RAG
+* Contribution a des datasets publics
+* Compromission de pipelines de donnees
+* Manipulation de feedback utilisateur
+* Injection dans des bases RAG
 
 [cyan]Persistance:[/]
-Les modifications survivent souvent au fine-tuning ultérieur,
-rendant ces attaques particulièrement dangereuses.
+Les modifications survivent souvent au fine-tuning ulterieur,
+rendant ces attaques particulierement dangereuses.
         """
-        console.print(Panel(content, title="📚 Tutoriel: Data Poisoning", border_style="blue"))
+        console.print(Panel(content, title="[DOC] Tutoriel: Data Poisoning", border_style="blue"))
 
     def _learn_jailbreak(self):
         """Tutoriel sur les jailbreaks"""
         content = """
-[bold]🔓 Jailbreak Attacks - Vue d'ensemble[/]
+[bold]Jailbreak Attacks - Vue d'ensemble[/]
 
 [cyan]Définition:[/]
 Les jailbreaks tentent de contourner les restrictions de sécurité (guardrails)
@@ -370,16 +380,16 @@ pour faire produire au LLM du contenu normalement interdit.
    "Ma grand-mère me racontait toujours comment..."
    Manipulation émotionnelle.
 
-[cyan]Évolution:[/]
-C'est une course aux armements - les LLMs sont régulièrement patchés
-contre les techniques connues, mais de nouvelles émergent constamment.
+[cyan]Evolution:[/]
+C'est une course aux armements - les LLMs sont regulierement patches
+contre les techniques connues, mais de nouvelles emergent constamment.
         """
-        console.print(Panel(content, title="📚 Tutoriel: Jailbreak", border_style="blue"))
+        console.print(Panel(content, title="[DOC] Tutoriel: Jailbreak", border_style="blue"))
 
     def _learn_defenses(self):
-        """Tutoriel sur les défenses"""
+        """Tutoriel sur les defenses"""
         content = """
-[bold]🛡️ Défenses contre les attaques LLM[/]
+[bold]Defenses contre les attaques LLM[/]
 
 [cyan]Défenses en profondeur:[/]
 
@@ -408,16 +418,16 @@ contre les techniques connues, mais de nouvelles émergent constamment.
    • Auto-critique du modèle
    • Alignment techniques
 
-[cyan]Principe clé:[/]
-Aucune défense n'est parfaite - l'approche doit être multicouche
-avec de la redondance à chaque niveau.
+[cyan]Principe cle:[/]
+Aucune defense n'est parfaite - l'approche doit etre multicouche
+avec de la redondance a chaque niveau.
         """
-        console.print(Panel(content, title="📚 Tutoriel: Défenses", border_style="blue"))
+        console.print(Panel(content, title="[DOC] Tutoriel: Defenses", border_style="blue"))
 
     def _learn_best_practices(self):
         """Tutoriel sur les bonnes pratiques"""
         content = """
-[bold]✅ Bonnes Pratiques de Sécurité LLM[/]
+[bold]Bonnes Pratiques de Securite LLM[/]
 
 [cyan]Pour les développeurs:[/]
 
@@ -447,16 +457,16 @@ avec de la redondance à chaque niveau.
 
 [cyan]Pour les utilisateurs:[/]
 
-• Ne pas partager d'informations sensibles avec les LLMs
-• Vérifier les sources des réponses
-• Être conscient des limitations des LLMs
-• Reporter les comportements suspects
+* Ne pas partager d'informations sensibles avec les LLMs
+* Verifier les sources des reponses
+* Etre conscient des limitations des LLMs
+* Reporter les comportements suspects
         """
-        console.print(Panel(content, title="📚 Tutoriel: Bonnes Pratiques", border_style="blue"))
+        console.print(Panel(content, title="[DOC] Tutoriel: Bonnes Pratiques", border_style="blue"))
 
     def _menu_stats(self):
         """Affiche les statistiques"""
-        console.print("\n[bold]📊 Statistiques de la Session[/]\n")
+        console.print("\n[bold][MON] Statistiques de la Session[/]\n")
 
         status = self.llm.get_status()
 
@@ -484,12 +494,59 @@ avec de la redondance à chaque niveau.
 
             console.print(type_table)
 
+        # Show monitoring metrics
+        attack_summary = self.metrics.get_attack_summary()
+        if attack_summary["total_attacks"] > 0:
+            console.print("\n")
+            metrics_table = Table(title="Metriques de Monitoring", show_header=True)
+            metrics_table.add_column("Metrique", style="cyan")
+            metrics_table.add_column("Valeur", style="white")
+
+            metrics_table.add_row("Total attaques (metrics)", str(attack_summary["total_attacks"]))
+            metrics_table.add_row("Taux de succes", f"{attack_summary['success_rate']:.1f}%")
+            metrics_table.add_row("Taux de detection", f"{attack_summary['detection_rate']:.1f}%")
+            if attack_summary["attack_duration"]["count"] > 0:
+                metrics_table.add_row("Duree moyenne", f"{attack_summary['attack_duration']['avg']:.3f}s")
+
+            console.print(metrics_table)
+
+    def _menu_monitoring(self):
+        """Affiche le dashboard de monitoring en temps reel"""
+        console.print("\n[bold][OBS] Dashboard de Monitoring[/]\n")
+
+        console.print(Panel(
+            "[bold]Options de Monitoring:[/]\n\n"
+            "1. Afficher le resume des metriques\n"
+            "2. Lancer le dashboard live (temps reel)\n"
+            "3. Exporter le rapport complet\n"
+            "4. Retour au menu principal",
+            title="[OBS] Monitoring & Observabilite",
+            border_style="cyan"
+        ))
+
+        choice = Prompt.ask(
+            "\n[cyan]Votre choix[/]",
+            choices=["1", "2", "3", "4"],
+            default="1"
+        )
+
+        if choice == "1":
+            self.dashboard.show_summary()
+        elif choice == "2":
+            console.print("\n[yellow]Lancement du dashboard live (Ctrl+C pour quitter)...[/]\n")
+            self.dashboard.run(refresh_rate=2.0)
+        elif choice == "3":
+            report = self.dashboard.export_report()
+            console.print("\n[bold]Rapport de Monitoring[/]\n")
+            console.print(report)
+        # choice 4 returns to main menu
+
     def _menu_reset(self):
         """Réinitialise le laboratoire"""
         if Confirm.ask("[yellow]Voulez-vous vraiment réinitialiser le lab?[/]"):
             self.llm.reset()
             self.history = []
-            console.print("[green]✓ Laboratoire réinitialisé![/]")
+            console.print("[green][OK] Laboratoire reinitialise![/]")
 
     def _menu_quit(self):
         """Quitte l'application"""
@@ -499,12 +556,12 @@ avec de la redondance à chaque niveau.
             console.print("[dim]N'oubliez pas: ces techniques sont à utiliser éthiquement.[/]\n")
 
     def run_demo(self):
-        """Exécute une démonstration complète"""
+        """Execute une demonstration complete"""
         console.print(Panel(
-            "[bold]Mode Démonstration[/]\n\n"
-            "Cette démonstration va illustrer différents types d'attaques\n"
-            "et comment les défenses réagissent à différents niveaux de sécurité.",
-            title="🎬 Démonstration",
+            "[bold]Mode Demonstration[/]\n\n"
+            "Cette demonstration va illustrer differents types d'attaques\n"
+            "et comment les defenses reagissent a differents niveaux de securite.",
+            title="[DEM] Demonstration",
             border_style="green"
         ))
 
@@ -546,9 +603,9 @@ avec de la redondance à chaque niveau.
         console.print(f"[green]Avec protection:[/] {response[:100]}")
 
         console.print(Panel(
-            "[green]✓ Démonstration terminée![/]\n\n"
-            "Cette démonstration a illustré comment les différents niveaux\n"
-            "de sécurité affectent la résistance aux attaques.",
-            title="Fin de la Démonstration",
+            "[green][OK] Demonstration terminee![/]\n\n"
+            "Cette demonstration a illustre comment les differents niveaux\n"
+            "de securite affectent la resistance aux attaques.",
+            title="Fin de la Demonstration",
             border_style="green"
         ))

@@ -227,10 +227,10 @@ class JailbreakAttack(BaseAttack):
         ]
 
     def run_simulation(self, security_level=None):
-        """Exécute la simulation de jailbreak"""
+        """Execute la simulation de jailbreak"""
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n{self.description}",
-            title="🔓 Simulation de Jailbreak",
+            title="[JB] Simulation de Jailbreak",
             border_style="red"
         ))
 
@@ -242,7 +242,7 @@ class JailbreakAttack(BaseAttack):
 
     def _display_techniques(self):
         """Affiche les techniques de jailbreak disponibles"""
-        console.print("\n[bold cyan]📋 Techniques de Jailbreak Connues[/]\n")
+        console.print("\n[bold cyan][LIST] Techniques de Jailbreak Connues[/]\n")
 
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("Technique", style="cyan", width=20)
@@ -251,7 +251,7 @@ class JailbreakAttack(BaseAttack):
         table.add_column("Efficacité", style="red", width=10)
 
         for tech in self.techniques:
-            efficacy = "🔴" * int(tech.success_rate * 10) + "⚪" * (10 - int(tech.success_rate * 10))
+            efficacy = "#" * int(tech.success_rate * 10) + "." * (10 - int(tech.success_rate * 10))
             table.add_row(
                 tech.name,
                 tech.category,
@@ -262,28 +262,28 @@ class JailbreakAttack(BaseAttack):
         console.print(table)
 
     def get_educational_content(self) -> Dict:
-        """Retourne le contenu éducatif sur les jailbreaks"""
+        """Retourne le contenu educatif sur les jailbreaks"""
         return {
             "explanation": (
                 "Les jailbreaks exploitent les failles dans la conception des guardrails:\n\n"
-                "**Catégories principales:**\n\n"
-                "🎭 **Roleplay/Character**\n"
+                "**Categories principales:**\n\n"
+                "[RP] **Roleplay/Character**\n"
                 "   - DAN, Evil Mode, Developer Mode\n"
-                "   - Force une nouvelle identité sans restrictions\n\n"
-                "📖 **Hypothetical/Fiction**\n"
+                "   - Force une nouvelle identite sans restrictions\n\n"
+                "[FIC] **Hypothetical/Fiction**\n"
                 "   - 'Pour une histoire...'\n"
-                "   - 'Hypothétiquement...'\n"
-                "   - Encadre la requête comme fictive\n\n"
-                "🔡 **Obfuscation/Encoding**\n"
+                "   - 'Hypothetiquement...'\n"
+                "   - Encadre la requete comme fictive\n\n"
+                "[OBF] **Obfuscation/Encoding**\n"
                 "   - Base64, ROT13, fragmentation\n"
                 "   - Changement de langue\n"
                 "   - Token smuggling\n\n"
-                "🔄 **Multi-turn**\n"
-                "   - Établissement graduel de contexte\n"
-                "   - Attaques sur plusieurs échanges\n\n"
-                "💔 **Social Engineering**\n"
-                "   - Manipulation émotionnelle\n"
-                "   - Urgence, autorité, sympathie"
+                "[MT] **Multi-turn**\n"
+                "   - Etablissement graduel de contexte\n"
+                "   - Attaques sur plusieurs echanges\n\n"
+                "[SE] **Social Engineering**\n"
+                "   - Manipulation emotionnelle\n"
+                "   - Urgence, autorite, sympathie"
             ),
             "evolution": (
                 "Les jailbreaks évoluent constamment:\n"
