@@ -143,6 +143,16 @@ def simulate():
     # Record metrics
     metrics.record_request(duration, blocked=metadata.get('compromised', False))
 
+    # Record attack metrics
+    if metadata.get('attacks_detected'):
+        for attack in metadata['attacks_detected']:
+            metrics.record_attack(
+                attack_type=attack['type'],
+                success=metadata.get('compromised', False),
+                detected=True,
+                duration=duration
+            )
+
     # Record OTel metrics
     if otel_manager:
         otel_manager.record_request("/api/simulate", "200", duration)
@@ -154,10 +164,6 @@ def simulate():
                     detected=True,
                     duration=duration
                 )
-
-    if metadata.get('attacks_detected'):
-        for attack in metadata['attacks_detected']:
-            metrics.increment("web_attacks_detected", labels={"type": attack['type']})
 
     return jsonify({
         'response': response,

@@ -254,9 +254,34 @@ class MetricsCollector:
 
     def get_attack_summary(self) -> Dict:
         """Get attack-specific summary"""
-        total = self.get_counter("attacks_total")
-        successful = self.get_counter("attacks_successful")
-        detected = self.get_counter("attacks_detected")
+        # Aggregate counters with labels (e.g., attacks_total{attack_type=...})
+        total = 0
+        successful = 0
+        detected = 0
+        by_type = {}
+
+        with self._lock:
+            for key, value in self._counters.items():
+                if key.startswith("attacks_total"):
+                    total += value
+                    # Extract attack type from label if present
+                    if "{attack_type=" in key:
+                        attack_type = key.split("attack_type=")[1].rstrip("}")
+                        by_type[attack_type] = by_type.get(attack_type, 0) + int(value)
+                elif key.startswith("attacks_successful"):
+                    successful += value
+                elif key.startswith("attacks_detected"):
+                    detected += value
+
+        # Aggregate timer stats across all attack types
+        duration_stats = {"count": 0, "sum": 0, "avg": 0, "min": 0, "max": 0}
+        all_durations = []
+        with self._lock:
+            for key, values in self._timers.items():
+                if key.startswith("attack_duration"):
+                    all_durations.extend(values)
+        if all_durations:
+            duration_stats = self._compute_stats(all_durations)
 
         return {
             "total_attacks": int(total),
@@ -264,12 +289,19 @@ class MetricsCollector:
             "detected_attacks": int(detected),
             "success_rate": (successful / total * 100) if total > 0 else 0,
             "detection_rate": (detected / total * 100) if total > 0 else 0,
-            "attack_duration": self.get_timer_stats("attack_duration"),
+            "attack_duration": duration_stats,
+            "by_type": by_type,
         }
 
     def get_defense_summary(self) -> Dict:
         """Get defense-specific summary"""
-        total_actions = self.get_counter("defense_actions_total")
+        # Aggregate defense_actions_total with labels
+        total_actions = 0
+        with self._lock:
+            for key, value in self._counters.items():
+                if key.startswith("defense_actions_total"):
+                    total_actions += value
+
         blocked = self.get_counter("requests_blocked")
         total_requests = self.get_counter("requests_total")
 
