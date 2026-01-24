@@ -24,7 +24,7 @@ services:
       - ENVIRONMENT=production
     depends_on:
       otel-collector:
-        condition: service_healthy
+        condition: service_started
     networks:
       - monitoring
     restart: unless-stopped
@@ -54,12 +54,9 @@ services:
     networks:
       - monitoring
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-T", "2", "-O", "/dev/null", "http://localhost:13133/health"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
+    # Note: healthcheck removed - otel-collector-contrib uses a scratch-based image
+    # with no shell utilities (wget/curl). The OTEL SDK in llm-attack-lab has
+    # built-in retry logic for connecting to the collector.
     depends_on:
       - victoriametrics
 
