@@ -55,7 +55,7 @@ services:
       - monitoring
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13133/health"]
+      test: ["CMD", "wget", "-T", "2", "-O", "/dev/null", "http://localhost:13133/health"]
       interval: 5s
       timeout: 5s
       retries: 10
