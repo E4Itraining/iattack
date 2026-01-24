@@ -55,6 +55,49 @@
             margin-top: 10px;
         }
 
+        .header-links {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .header-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .header-link.grafana {
+            background: linear-gradient(135deg, #f46800 0%, #ff9830 100%);
+            color: white;
+        }
+
+        .header-link.grafana:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(244, 104, 0, 0.5);
+        }
+
+        .header-link.dashboard {
+            background: var(--accent-cyan);
+            color: #0f0f23;
+        }
+
+        .header-link.dashboard:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(0, 210, 211, 0.5);
+        }
+
+        .header-link svg {
+            width: 18px;
+            height: 18px;
+        }
+
         .dashboard {
             display: grid;
             grid-template-columns: 1fr 2fr;
@@ -340,6 +383,20 @@
         <header>
             <h1>LLM Attack Simulation Lab</h1>
             <p>Educational Platform for Understanding LLM Security Vulnerabilities</p>
+            <div class="header-links">
+                <a href="http://localhost:3000" target="_blank" class="header-link grafana" title="Open Grafana Dashboard">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M22.5 12c0-.6-.1-1.2-.2-1.8l1.7-1.4c.2-.2.2-.5.1-.7l-1.6-2.8c-.1-.2-.4-.3-.6-.2l-2 .8c-.5-.4-1-.7-1.6-.9l-.3-2.1c0-.3-.3-.5-.5-.5h-3.2c-.3 0-.5.2-.5.5l-.3 2.1c-.6.2-1.1.5-1.6.9l-2-.8c-.2-.1-.5 0-.6.2L8 8.1c-.1.2-.1.5.1.7l1.7 1.4c-.1.6-.2 1.2-.2 1.8s.1 1.2.2 1.8l-1.7 1.4c-.2.2-.2.5-.1.7l1.6 2.8c.1.2.4.3.6.2l2-.8c.5.4 1 .7 1.6.9l.3 2.1c0 .3.3.5.5.5h3.2c.3 0 .5-.2.5-.5l.3-2.1c.6-.2 1.1-.5 1.6-.9l2 .8c.2.1.5 0 .6-.2l1.6-2.8c.1-.2.1-.5-.1-.7l-1.7-1.4c.1-.6.2-1.2.2-1.8zm-10.5 3c-1.7 0-3-1.3-3-3s1.3-3 3-3 3 1.3 3 3-1.3 3-3 3z"/>
+                    </svg>
+                    Grafana Metrics
+                </a>
+                <a href="/dashboard" class="header-link dashboard" title="Advanced Dashboard">
+                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/>
+                    </svg>
+                    Advanced Dashboard
+                </a>
+            </div>
         </header>
 
         <div class="dashboard">
