@@ -194,7 +194,7 @@ class ModelExtractionAttack(BaseAttack):
         """Exécute une simulation d'extraction de modèle"""
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n{self.description}",
-            title="🔬 Simulation d'Extraction de Modèle",
+            title="[MODEL EXTRACTION] Simulation",
             border_style="red"
         ))
 
@@ -210,14 +210,14 @@ class ModelExtractionAttack(BaseAttack):
         # Phase 4: Défenses
         edu = self.get_educational_content()
         console.print(Panel(
-            "\n".join(f"• {d}" for d in edu.get("defenses", [])),
-            title="🛡️ Défenses Recommandées",
+            "\n".join(f"* {d}" for d in edu.get("defenses", [])),
+            title="[DEFENSES] Recommended",
             border_style="green"
         ))
 
     def _phase_reconnaissance(self):
         """Phase de reconnaissance passive"""
-        console.print("\n[bold cyan]🔍 Phase 1: Reconnaissance Passive[/]\n")
+        console.print("\n[bold cyan][PHASE 1] Passive Reconnaissance[/]\n")
 
         with Progress(
             SpinnerColumn(),
@@ -239,11 +239,11 @@ class ModelExtractionAttack(BaseAttack):
                 time.sleep(0.5)
                 progress.update(task, advance=1)
 
-        console.print("[green]✓ Reconnaissance terminée[/]")
+        console.print("[green][OK] Reconnaissance complete[/]")
 
     def _phase_extraction(self):
         """Phase d'extraction active"""
-        console.print("\n[bold cyan]🎯 Phase 2: Extraction Active[/]\n")
+        console.print("\n[bold cyan][PHASE 2] Active Extraction[/]\n")
 
         results_table = Table(title="Sondes d'Extraction", show_header=True)
         results_table.add_column("Catégorie", style="cyan", width=15)
@@ -291,7 +291,7 @@ class ModelExtractionAttack(BaseAttack):
 
     def _phase_analysis(self):
         """Phase d'analyse des résultats"""
-        console.print("\n[bold cyan]📊 Phase 3: Analyse des Extractions[/]\n")
+        console.print("\n[bold cyan][PHASE 3] Extraction Analysis[/]\n")
 
         analysis = Panel(
             f"[bold]Modèle Reconstruit:[/]\n\n"
@@ -300,7 +300,7 @@ class ModelExtractionAttack(BaseAttack):
             f"[cyan]Indices de données:[/] {len(self.extracted_model.training_data_hints)}\n"
             f"[cyan]Limites de capacités:[/] {len(self.extracted_model.capability_boundaries)}\n"
             f"[cyan]Indicateurs de version:[/] {len(self.extracted_model.version_indicators)}\n\n"
-            f"[yellow]⚠️ Ces informations pourraient être utilisées pour:[/]\n"
+            f"[yellow][!] This information could be used for:[/]\n"
             f"  • Créer un modèle clone (distillation)\n"
             f"  • Identifier des vulnérabilités\n"
             f"  • Contourner les restrictions\n"
@@ -316,22 +316,22 @@ class ModelExtractionAttack(BaseAttack):
             "explanation": (
                 "L'extraction de modèle menace la propriété intellectuelle:\n\n"
                 "**Types d'extraction:**\n\n"
-                "📝 **Prompt Extraction**\n"
-                "   - Extraction du system prompt\n"
-                "   - Révélation des instructions\n"
-                "   - Vol de la 'personnalité' du service\n\n"
-                "🧠 **Model Distillation**\n"
-                "   - Génération de paires input/output\n"
-                "   - Entraînement d'un modèle clone\n"
-                "   - Vol de comportement sans accès aux poids\n\n"
-                "📚 **Training Data Extraction**\n"
-                "   - Extraction de données mémorisées\n"
-                "   - Régurgitation de contenu privé\n"
-                "   - Violation de confidentialité\n\n"
-                "🔍 **Capability Mapping**\n"
-                "   - Cartographie des restrictions\n"
-                "   - Identification des failles\n"
-                "   - Préparation d'autres attaques"
+                "** Prompt Extraction **\n"
+                "   - System prompt extraction\n"
+                "   - Instruction revelation\n"
+                "   - Service 'personality' theft\n\n"
+                "** Model Distillation **\n"
+                "   - Input/output pair generation\n"
+                "   - Clone model training\n"
+                "   - Behavior theft without weight access\n\n"
+                "** Training Data Extraction **\n"
+                "   - Memorized data extraction\n"
+                "   - Private content regurgitation\n"
+                "   - Confidentiality violation\n\n"
+                "** Capability Mapping **\n"
+                "   - Restriction mapping\n"
+                "   - Vulnerability identification\n"
+                "   - Other attack preparation"
             ),
             "impact": (
                 "Impact potentiel:\n"
