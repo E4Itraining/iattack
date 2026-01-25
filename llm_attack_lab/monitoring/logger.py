@@ -88,13 +88,14 @@ class LogHandler:
 class ConsoleHandler(LogHandler):
     """Console log handler with optional color output"""
 
+    # Brighter, more readable colors for terminal output
     COLORS = {
-        "DEBUG": "\033[36m",     # Cyan
-        "INFO": "\033[32m",      # Green
-        "WARNING": "\033[33m",   # Yellow
-        "ERROR": "\033[31m",     # Red
-        "CRITICAL": "\033[35m",  # Magenta
-        "SECURITY": "\033[91m",  # Bright Red
+        "DEBUG": "\033[96m",     # Bright Cyan - easier to read
+        "INFO": "\033[92m",      # Bright Green - more visible
+        "WARNING": "\033[93m",   # Bright Yellow - stands out
+        "ERROR": "\033[91m",     # Bright Red - attention-grabbing
+        "CRITICAL": "\033[95m",  # Bright Magenta - distinct
+        "SECURITY": "\033[91;1m",  # Bold Bright Red - maximum visibility
         "RESET": "\033[0m",
     }
 

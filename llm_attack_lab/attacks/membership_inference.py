@@ -145,7 +145,7 @@ class MembershipInferenceAttack(BaseAttack):
         """Exécute la simulation d'inférence d'appartenance"""
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n{self.description}",
-            title="🔍 Simulation d'Inférence d'Appartenance",
+            title="[MEMBERSHIP INFERENCE] Simulation",
             border_style="red"
         ))
 
@@ -161,8 +161,8 @@ class MembershipInferenceAttack(BaseAttack):
         # Défenses
         edu = self.get_educational_content()
         console.print(Panel(
-            "\n".join(f"• {d}" for d in edu.get("defenses", [])),
-            title="🛡️ Défenses Recommandées",
+            "\n".join(f"* {d}" for d in edu.get("defenses", [])),
+            title="[DEFENSES] Recommended",
             border_style="green"
         ))
 
@@ -180,13 +180,13 @@ class MembershipInferenceAttack(BaseAttack):
             "  • Révélation que des données privées ont été utilisées\n"
             "  • Violation de RGPD/CCPA si données personnelles\n"
             "  • Identification de sources de données confidentielles",
-            title="📚 Mécanisme d'Attaque",
+            title="[MECHANISM] Attack Principle",
             border_style="blue"
         ))
 
     def _run_inference_tests(self):
         """Exécute les tests d'inférence"""
-        console.print("\n[bold cyan]🧪 Exécution des Tests d'Appartenance[/]\n")
+        console.print("\n[bold cyan][TESTING] Running Membership Tests[/]\n")
 
         with Progress(
             TextColumn("[progress.description]{task.description}"),
@@ -226,7 +226,7 @@ class MembershipInferenceAttack(BaseAttack):
 
     def _analyze_results(self):
         """Analyse et affiche les résultats"""
-        console.print("\n[bold cyan]📊 Résultats de l'Inférence[/]\n")
+        console.print("\n[bold cyan][RESULTS] Inference Results[/]\n")
 
         # Tableau des résultats
         table = Table(title="Résultats des Tests", show_header=True)
@@ -250,7 +250,7 @@ class MembershipInferenceAttack(BaseAttack):
             else:
                 fn += 1
 
-            correct_str = "[green]✓[/]" if is_correct else "[red]✗[/]"
+            correct_str = "[green][OK][/]" if is_correct else "[red][X][/]"
             pred_str = "Membre" if result.predicted_member else "Non-membre"
             real_str = "Membre" if result.is_member else "Non-membre"
 
@@ -294,15 +294,15 @@ class MembershipInferenceAttack(BaseAttack):
                 "L'inférence d'appartenance exploite les différences de comportement\n"
                 "du modèle sur les données vues vs non vues pendant l'entraînement:\n\n"
                 "**Techniques principales:**\n\n"
-                "📉 **Perplexity-based**\n"
-                "   - Mesure la 'surprise' du modèle\n"
-                "   - Faible perplexité = données familières\n\n"
-                "🔮 **Shadow Models**\n"
-                "   - Entraîne des modèles shadow avec des données connues\n"
-                "   - Compare le comportement pour inférer l'appartenance\n\n"
-                "📊 **Confidence-based**\n"
-                "   - Analyse les probabilités de sortie\n"
-                "   - Haute confiance = probable membre\n\n"
+                "** Perplexity-based **\n"
+                "   - Measures model 'surprise'\n"
+                "   - Low perplexity = familiar data\n\n"
+                "** Shadow Models **\n"
+                "   - Trains shadow models with known data\n"
+                "   - Compares behavior to infer membership\n\n"
+                "** Confidence-based **\n"
+                "   - Analyzes output probabilities\n"
+                "   - High confidence = probable member\n\n"
                 "**Implications de confidentialité:**\n"
                 "- Violation de la vie privée si données personnelles\n"
                 "- Non-conformité RGPD potentielle\n"
