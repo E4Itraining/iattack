@@ -117,9 +117,9 @@ class ClearReportPlugin:
         self.module_stats = {}
         self._test_index = 0
         self._total_tests = 0
-        # Dupliquer le fd stderr pour un acces stable meme si
-        # sys.stderr est remplace par un test ou un plugin
-        self._fd = os.dup(2)
+        # Dupliquer le fd stdout pour un acces stable meme si
+        # sys.stdout est remplace par un test ou un plugin
+        self._fd = os.dup(1)
         self._spinner = Spinner(self._fd)
 
     def _out(self, text=""):
