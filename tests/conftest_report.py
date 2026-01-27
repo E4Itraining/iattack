@@ -11,6 +11,7 @@ import os
 import time
 import logging
 import sys
+import threading
 import pytest
 
 
@@ -56,6 +57,53 @@ def _class_name(nodeid: str) -> str:
     return ""
 
 
+# -- Spinner ---------------------------------------------------------------
+
+class Spinner:
+    """Spinner anime qui montre qu'un test est en cours d'execution."""
+
+    FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+
+    def __init__(self, fd):
+        self._fd = fd
+        self._running = False
+        self._thread = None
+        self._label = ""
+
+    def start(self, label):
+        """Demarre le spinner avec un label."""
+        self._label = label
+        self._running = True
+        self._thread = threading.Thread(target=self._spin, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        """Arrete le spinner et efface la ligne."""
+        self._running = False
+        if self._thread:
+            self._thread.join(timeout=1)
+            self._thread = None
+        # Efface la ligne du spinner
+        try:
+            os.write(self._fd, (f"\r\033[K").encode("utf-8"))
+        except Exception:
+            pass
+
+    def _spin(self):
+        idx = 0
+        while self._running:
+            frame = self.FRAMES[idx % len(self.FRAMES)]
+            try:
+                os.write(
+                    self._fd,
+                    f"\r    {YELLOW}{frame} {self._label}...{RESET}\033[K".encode("utf-8"),
+                )
+            except Exception:
+                break
+            idx += 1
+            time.sleep(0.1)
+
+
 # -- Plugin ----------------------------------------------------------------
 
 class ClearReportPlugin:
@@ -72,6 +120,7 @@ class ClearReportPlugin:
         # Dupliquer le fd stderr pour un acces stable meme si
         # sys.stderr est remplace par un test ou un plugin
         self._fd = os.dup(2)
+        self._spinner = Spinner(self._fd)
 
     def _out(self, text=""):
         """Ecrit via le fd duplique (stable, jamais capture)."""
@@ -131,6 +180,11 @@ class ClearReportPlugin:
                 # Afficher les bannieres avant le test
                 self._print_headers(item)
 
+                # Afficher le spinner pendant l'execution du test
+                test_name = item.nodeid.split("::")[-1]
+                progress = f"[{self._test_index}/{self._total_tests}]"
+                self._spinner.start(f"{progress} {test_name}")
+
                 item.config.hook.pytest_runtest_protocol(item=item, nextitem=nextitem)
 
                 if session.shouldfail:
@@ -138,10 +192,13 @@ class ClearReportPlugin:
                 if session.shouldstop:
                     raise session.Interrupted(session.shouldstop)
         except (session.Failed, session.Interrupted):
+            self._spinner.stop()
             raise
         except Exception as exc:
+            self._spinner.stop()
             self._out(f"\n    {RED}[ERREUR BOUCLE] Test {self._test_index}: {exc}{RESET}")
         finally:
+            self._spinner.stop()
             self._print_summary()
 
         return True
@@ -176,6 +233,9 @@ class ClearReportPlugin:
         try:
             if report.when != "call" and not (report.when == "setup" and report.failed):
                 return
+
+            # Arreter le spinner avant d'afficher le resultat
+            self._spinner.stop()
 
             nodeid = report.nodeid
             mod = _module_key(nodeid)
