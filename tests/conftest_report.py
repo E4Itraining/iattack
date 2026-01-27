@@ -59,13 +59,21 @@ def _class_name(nodeid: str) -> str:
 
 # -- Spinner ---------------------------------------------------------------
 
+def _raw_write(text):
+    """Ecrit directement sur le stdout original, jamais capture."""
+    try:
+        sys.__stdout__.write(text)
+        sys.__stdout__.flush()
+    except Exception:
+        pass
+
+
 class Spinner:
     """Spinner anime qui montre qu'un test est en cours d'execution."""
 
     FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
 
-    def __init__(self, fd):
-        self._fd = fd
+    def __init__(self):
         self._running = False
         self._thread = None
         self._label = ""
@@ -83,23 +91,13 @@ class Spinner:
         if self._thread:
             self._thread.join(timeout=1)
             self._thread = None
-        # Efface la ligne du spinner
-        try:
-            os.write(self._fd, (f"\r\033[K").encode("utf-8"))
-        except Exception:
-            pass
+        _raw_write(f"\r\033[K")
 
     def _spin(self):
         idx = 0
         while self._running:
             frame = self.FRAMES[idx % len(self.FRAMES)]
-            try:
-                os.write(
-                    self._fd,
-                    f"\r    {YELLOW}{frame} {self._label}...{RESET}\033[K".encode("utf-8"),
-                )
-            except Exception:
-                break
+            _raw_write(f"\r    {YELLOW}{frame} {self._label}...{RESET}\033[K")
             idx += 1
             time.sleep(0.1)
 
@@ -117,17 +115,11 @@ class ClearReportPlugin:
         self.module_stats = {}
         self._test_index = 0
         self._total_tests = 0
-        # Dupliquer le fd stdout pour un acces stable meme si
-        # sys.stdout est remplace par un test ou un plugin
-        self._fd = os.dup(1)
-        self._spinner = Spinner(self._fd)
+        self._spinner = Spinner()
 
     def _out(self, text=""):
-        """Ecrit via le fd duplique (stable, jamais capture)."""
-        try:
-            os.write(self._fd, (text + "\n").encode("utf-8", errors="replace"))
-        except Exception:
-            pass
+        """Ecrit sur le stdout original (sys.__stdout__), jamais capture."""
+        _raw_write(text + "\n")
 
     # -- Hooks pytest -------------------------------------------------------
 
