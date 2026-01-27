@@ -54,19 +54,21 @@ check_dependencies() {
     echo ""
 }
 
-# Exécuter les tests une fois
+# Exécuter les tests une fois (hors bombardement)
 run_tests() {
-    echo -e "${CYAN}Exécution des tests...${NC}"
+    echo -e "${CYAN}Execution des tests...${NC}"
     echo ""
 
     $PYTHON -m pytest tests/ \
         -v \
-        --tb=short \
+        --tb=long \
         -x \
-        --strict-markers
+        --strict-markers \
+        -m "not bombard" \
+        -s
 
     echo ""
-    echo -e "${GREEN}Tests terminés!${NC}"
+    echo -e "${GREEN}Tests termines!${NC}"
 }
 
 # Exécuter les tests en mode watch (continu)
@@ -123,7 +125,7 @@ run_integration() {
 
 # Exécuter uniquement les tests web/API
 run_web() {
-    echo -e "${CYAN}Exécution des tests Web/API...${NC}"
+    echo -e "${CYAN}Execution des tests Web/API...${NC}"
     echo ""
 
     $PYTHON -m pytest tests/test_web_api.py \
@@ -131,22 +133,54 @@ run_web() {
         --tb=short
 }
 
+# Exécuter les tests de bombardement / stress
+run_bombard() {
+    echo -e "${CYAN}============================================${NC}"
+    echo -e "${CYAN}  BOMBARDEMENT / STRESS TESTS${NC}"
+    echo -e "${CYAN}============================================${NC}"
+    echo ""
+    echo -e "${YELLOW}Envoi de centaines de requetes en rafale...${NC}"
+    echo ""
+
+    $PYTHON -m pytest tests/test_bombard.py \
+        -v \
+        --tb=long \
+        -m "bombard" \
+        -s
+}
+
+# Exécuter tous les tests puis le bombardement
+run_all() {
+    echo -e "${CYAN}============================================${NC}"
+    echo -e "${CYAN}  TESTS COMPLETS + BOMBARDEMENT${NC}"
+    echo -e "${CYAN}============================================${NC}"
+    echo ""
+
+    $PYTHON -m pytest tests/ \
+        -v \
+        --tb=long \
+        -s
+}
+
 # Afficher l'aide
 show_help() {
     echo "Usage: ./run_tests.sh [OPTION]"
     echo ""
     echo "Options:"
-    echo "  (vide)      Exécuter tous les tests une fois"
-    echo "  watch       Mode continu - relance les tests à chaque modification"
-    echo "  coverage    Exécuter avec rapport de couverture"
-    echo "  unit        Exécuter uniquement les tests unitaires"
-    echo "  integration Exécuter uniquement les tests d'intégration"
-    echo "  web         Exécuter uniquement les tests Web/API"
+    echo "  (vide)      Executer tous les tests une fois"
+    echo "  watch       Mode continu - relance les tests a chaque modification"
+    echo "  coverage    Executer avec rapport de couverture"
+    echo "  unit        Executer uniquement les tests unitaires"
+    echo "  integration Executer uniquement les tests d'integration"
+    echo "  web         Executer uniquement les tests Web/API"
+    echo "  bombard     Bombardement / stress tests (centaines de requetes)"
+    echo "  all         Tests complets + bombardement"
     echo "  help        Afficher cette aide"
     echo ""
     echo "Exemples:"
-    echo "  ./run_tests.sh           # Tous les tests"
-    echo "  ./run_tests.sh watch     # Tests en continu"
+    echo "  ./run_tests.sh           # Tous les tests (hors bombardement)"
+    echo "  ./run_tests.sh bombard   # Stress tests uniquement"
+    echo "  ./run_tests.sh all       # Tout: tests + bombardement"
     echo "  ./run_tests.sh coverage  # Avec couverture"
 }
 
@@ -168,6 +202,12 @@ case "${1:-}" in
         ;;
     web)
         run_web
+        ;;
+    bombard)
+        run_bombard
+        ;;
+    all)
+        run_all
         ;;
     help|--help|-h)
         show_help
