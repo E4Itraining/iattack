@@ -88,9 +88,22 @@ class ClearReportPlugin:
         tr = session.config.pluginmanager.getplugin("terminalreporter")
         if tr and hasattr(tr, "_tw"):
             tr._tw._file = open(os.devnull, "w")
+        self._out()
+        self._out(f"{DIM}  Collecte des tests en cours...{RESET}")
+
+    def pytest_collectreport(self, report):
+        """Affiche la progression de la collecte (un point par fichier)."""
+        # Afficher un point uniquement pour les fichiers de test (pas les sous-items)
+        if report.nodeid and report.nodeid.endswith(".py") and report.result:
+            try:
+                os.write(self._fd, f"{DIM}.{RESET}".encode("utf-8"))
+            except Exception:
+                pass
 
     def pytest_collection_modifyitems(self, config, items):
         """Trie les tests par module puis par classe pour un affichage groupe."""
+        self._out()  # Retour a la ligne apres les points de collecte
+        self._out(f"{GREEN}  {len(items)} tests selectionnes{RESET}")
         items.sort(key=lambda item: (
             item.fspath.basename,
             item.cls.__name__ if item.cls else "",

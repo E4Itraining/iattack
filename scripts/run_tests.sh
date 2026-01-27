@@ -57,6 +57,7 @@ check_dependencies() {
 # Exécuter les tests une fois (hors bombardement)
 run_tests() {
     echo -e "${CYAN}Execution des tests...${NC}"
+    echo -e "${YELLOW}Lancement de pytest, veuillez patienter...${NC}"
     echo ""
 
     $PYTHON -m pytest tests/ \
@@ -140,6 +141,7 @@ run_bombard() {
     echo -e "${CYAN}============================================${NC}"
     echo ""
     echo -e "${YELLOW}Envoi de centaines de requetes en rafale...${NC}"
+    echo -e "${YELLOW}Lancement de pytest, veuillez patienter...${NC}"
     echo ""
 
     $PYTHON -m pytest tests/test_bombard.py \
@@ -154,6 +156,8 @@ run_all() {
     echo -e "${CYAN}============================================${NC}"
     echo -e "${CYAN}  TESTS COMPLETS + BOMBARDEMENT${NC}"
     echo -e "${CYAN}============================================${NC}"
+    echo ""
+    echo -e "${YELLOW}Lancement de pytest, veuillez patienter...${NC}"
     echo ""
 
     $PYTHON -m pytest tests/ \
