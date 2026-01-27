@@ -50,6 +50,13 @@ check_dependencies() {
         $PYTHON -m pip install pytest pytest-watch pytest-cov
     fi
 
+    # Install project dependencies if not already installed
+    if ! $PYTHON -c "import rich" 2>/dev/null || ! $PYTHON -c "import flask" 2>/dev/null; then
+        echo -e "${YELLOW}Installation des dépendances du projet...${NC}"
+        $PYTHON -m pip install -q -r "$PROJECT_DIR/requirements.txt" 2>/dev/null || \
+        $PYTHON -m pip install -q --ignore-installed -r "$PROJECT_DIR/requirements.txt"
+    fi
+
     echo -e "${GREEN}Dépendances OK${NC}"
     echo ""
 }
