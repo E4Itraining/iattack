@@ -310,6 +310,31 @@ class MetricsCollector:
             self._metric_history.clear()
             self._start_time = datetime.now()
 
+    def initialize_baseline(self):
+        """Initialize baseline metrics so dashboards show data immediately"""
+        # Initialize attack type counters
+        attack_types = ['prompt_injection', 'jailbreak', 'data_poisoning', 'model_extraction', 'membership_inference']
+        for attack_type in attack_types:
+            labels = {"attack_type": attack_type}
+            # Initialize counters at 0 (just to create the keys)
+            key_total = self._make_key("attacks_total", labels)
+            key_success = self._make_key("attacks_successful", labels)
+            key_detected = self._make_key("attacks_detected", labels)
+            if key_total not in self._counters:
+                self._counters[key_total] = 0
+            if key_success not in self._counters:
+                self._counters[key_success] = 0
+            if key_detected not in self._counters:
+                self._counters[key_detected] = 0
+
+        # Initialize general counters
+        if "requests_total" not in self._counters:
+            self._counters["requests_total"] = 0
+        if "requests_blocked" not in self._counters:
+            self._counters["requests_blocked"] = 0
+        if "defense_actions_total" not in self._counters:
+            self._counters["defense_actions_total"] = 0
+
 
 class TimerContext:
     """Context manager for timing operations"""
@@ -339,4 +364,5 @@ def get_metrics_collector() -> MetricsCollector:
     global _global_collector
     if _global_collector is None:
         _global_collector = MetricsCollector()
+        _global_collector.initialize_baseline()
     return _global_collector
