@@ -9,6 +9,12 @@ import pytest
 import sys
 import os
 
+# Désactiver OpenTelemetry pendant les tests pour éviter les erreurs de connexion
+# au collecteur OTLP (otel-collector:4317) qui n'est pas disponible en mode test
+os.environ.setdefault("OTEL_ENABLE_METRICS", "false")
+os.environ.setdefault("OTEL_ENABLE_TRACING", "false")
+os.environ.setdefault("OTEL_SDK_DISABLED", "true")
+
 # Ajouter le chemin du projet pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
