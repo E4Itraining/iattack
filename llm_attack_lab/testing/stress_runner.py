@@ -9,6 +9,7 @@ This is different from test_runner.py which runs pytest tests.
 This module directly generates traffic against the simulator.
 """
 
+import os
 import threading
 import queue
 import time
@@ -458,9 +459,11 @@ class StressRunner:
                         )
 
             if self._security_metrics:
+                # Use configurable IP address for metrics (default to localhost for stress testing)
+                stress_ip = os.environ.get("STRESS_RUNNER_IP", "127.0.0.1")
                 self._security_metrics.record_api_query(
                     user_id="stress_runner",
-                    ip_address="127.0.0.1",
+                    ip_address=stress_ip,
                     endpoint="/stress/" + phase
                 )
 
