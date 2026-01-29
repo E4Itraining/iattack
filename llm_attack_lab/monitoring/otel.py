@@ -285,8 +285,57 @@ class OTelManager:
             self._prometheus_port_actual = available_port
             logger.info(f"Prometheus metrics server started on port {available_port}")
 
+            # Initialize baseline metrics so Grafana shows data immediately
+            self._initialize_baseline_metrics()
+
         except Exception as e:
             logger.error(f"Failed to start Prometheus server: {e}")
+
+    def _initialize_baseline_metrics(self):
+        """Initialize metrics with baseline values so Grafana dashboards show data immediately"""
+        # Initialize gauges with default values
+        if "security_level" in self._prom_metrics:
+            self._prom_metrics["security_level"].set(2)  # MEDIUM
+
+        if "compromised_status" in self._prom_metrics:
+            self._prom_metrics["compromised_status"].set(0)  # Not compromised
+
+        # Initialize counters with 0 by accessing them (creates the time series)
+        attack_types = ["prompt_injection", "jailbreak", "data_poisoning", "model_extraction", "membership_inference"]
+        for attack_type in attack_types:
+            if "attacks_total" in self._prom_metrics:
+                # Access all label combinations to create time series
+                self._prom_metrics["attacks_total"].labels(
+                    attack_type=attack_type, success="false", detected="false"
+                )
+                self._prom_metrics["attacks_total"].labels(
+                    attack_type=attack_type, success="true", detected="true"
+                )
+
+            if "attack_duration" in self._prom_metrics:
+                self._prom_metrics["attack_duration"].labels(attack_type=attack_type)
+
+        # Initialize defense actions
+        defense_types = ["input_sanitizer", "output_filter", "guardrails"]
+        actions = ["block", "warn", "allow"]
+        threat_levels = ["low", "medium", "high", "critical"]
+        for defense in defense_types:
+            for action in actions:
+                for level in threat_levels:
+                    if "defense_actions" in self._prom_metrics:
+                        self._prom_metrics["defense_actions"].labels(
+                            defense_type=defense, action=action, threat_level=level
+                        )
+
+        # Initialize request metrics
+        endpoints = ["/api/simulate", "/api/status", "/stress/populate", "/stress/stress"]
+        for endpoint in endpoints:
+            if "requests_total" in self._prom_metrics:
+                self._prom_metrics["requests_total"].labels(endpoint=endpoint, status="200")
+            if "request_latency" in self._prom_metrics:
+                self._prom_metrics["request_latency"].labels(endpoint=endpoint)
+
+        logger.info("Baseline metrics initialized for Grafana dashboards")
 
     def _initialize_prometheus_only(self):
         """Fallback: Initialize only Prometheus metrics"""

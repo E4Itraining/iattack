@@ -497,19 +497,22 @@ def _find_available_port(base_port: int, host: str = "0.0.0.0", port_range: int 
     return None
 
 
-def run_web_server(host='0.0.0.0', port=None, debug=None):
+def run_web_server(host='0.0.0.0', port=None, debug=None, auto_stress=None):
     """Run the web server
 
     Args:
         host: Host to bind to (default: 0.0.0.0)
         port: Port to bind to (default: from WEB_SERVER_PORT env var or 8081)
         debug: Enable debug mode (default: from FLASK_DEBUG env var)
+        auto_stress: Auto-start stress testing (default: from AUTO_STRESS env var)
 
     Environment variables:
         WEB_SERVER_PORT: Default port (default: 8081)
         WEB_SERVER_PORT_AUTO: Enable auto port selection if default is busy (default: true)
         WEB_SERVER_PORT_RANGE: Range of ports to try (default: 10)
         FLASK_DEBUG: Enable debug mode (default: false)
+        AUTO_STRESS: Auto-start stress testing on startup (default: false)
+        AUTO_STRESS_DELAY: Delay before auto-starting stress test in seconds (default: 2)
     """
     # Use environment variable for port, default to 8081
     if port is None:
@@ -544,6 +547,31 @@ def run_web_server(host='0.0.0.0', port=None, debug=None):
             print(f"Prometheus metrics available on port {prom_port}")
         else:
             print("Prometheus metrics server not started (port conflict or disabled)")
+
+    # Check for auto-stress mode
+    if auto_stress is None:
+        auto_stress = os.getenv('AUTO_STRESS', 'false').lower() == 'true'
+
+    if auto_stress:
+        auto_stress_delay = float(os.getenv('AUTO_STRESS_DELAY', '2'))
+        print(f"Auto-stress mode enabled, will start in {auto_stress_delay}s")
+
+        def _auto_start_stress():
+            time.sleep(auto_stress_delay)
+            runner = get_stress_runner()
+            config = {
+                "populate_count": int(os.getenv('AUTO_STRESS_POPULATE', '50')),
+                "stress_batch_size": int(os.getenv('AUTO_STRESS_BATCH', '5')),
+                "stress_delay": float(os.getenv('AUTO_STRESS_DELAY_BATCH', '0.5')),
+                "workers": int(os.getenv('AUTO_STRESS_WORKERS', '3')),
+                "attack_ratio": float(os.getenv('AUTO_STRESS_ATTACK_RATIO', '0.7')),
+            }
+            print(f"Auto-starting stress test with config: {config}")
+            runner.start(config)
+
+        import threading
+        stress_thread = threading.Thread(target=_auto_start_stress, daemon=True)
+        stress_thread.start()
 
     # threaded=True is REQUIRED for SSE streaming to work properly
     app.run(host=host, port=actual_port, debug=debug, threaded=True)

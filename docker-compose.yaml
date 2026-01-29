@@ -22,6 +22,14 @@ services:
       - OTEL_ENABLE_METRICS=true
       - PROMETHEUS_METRICS_PORT=8000
       - ENVIRONMENT=production
+      # Auto-start stress testing for immediate Grafana data
+      - AUTO_STRESS=true
+      - AUTO_STRESS_DELAY=5
+      - AUTO_STRESS_POPULATE=100
+      - AUTO_STRESS_BATCH=10
+      - AUTO_STRESS_DELAY_BATCH=0.2
+      - AUTO_STRESS_WORKERS=5
+      - AUTO_STRESS_ATTACK_RATIO=0.7
     depends_on:
       otel-collector:
         condition: service_healthy
