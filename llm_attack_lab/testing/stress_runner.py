@@ -464,18 +464,8 @@ class StressRunner:
                     endpoint="/stress/" + phase
                 )
 
-                if metadata.get("attacks_detected"):
-                    for attack in metadata["attacks_detected"]:
-                        self._security_metrics.record_prompt_injection_score(
-                            score=attack.get("confidence", 0.85),
-                            model_name="llm-simulator",
-                            detection_method="rule_based"
-                        )
-                        self._security_metrics.record_security_alert(
-                            alert_type=attack.get("type", "unknown"),
-                            severity="high" if metadata.get("compromised") else "medium",
-                            pattern="llm"
-                        )
+                # Generate comprehensive security metrics for Grafana dashboards
+                self._record_comprehensive_security_metrics(payload, metadata, duration)
 
             # Emit result event (sampled to avoid flooding)
             if random.random() < 0.1:  # 10% sampling
@@ -497,6 +487,172 @@ class StressRunner:
                 "phase": phase,
                 "error": str(e),
             })
+
+    def _record_comprehensive_security_metrics(self, payload: str, metadata: dict, duration: float):
+        """
+        Record comprehensive security metrics for all Grafana dashboards.
+
+        This generates metrics for both main and ml-security-metrics dashboards.
+        """
+        if not self._security_metrics:
+            return
+
+        attacks_detected = metadata.get("attacks_detected", [])
+        is_attack = len(attacks_detected) > 0
+        is_compromised = metadata.get("compromised", False)
+
+        # ===== ADVERSARIAL PATTERN METRICS =====
+
+        # Reconstruction error (higher for attacks)
+        base_error = 0.5 + random.random() * 0.5  # Normal: 0.5-1.0
+        if is_attack:
+            base_error = 1.5 + random.random() * 2.0  # Attack: 1.5-3.5
+        if is_compromised:
+            base_error = 2.5 + random.random() * 2.5  # Compromised: 2.5-5.0
+        self._security_metrics.record_reconstruction_error(
+            error=base_error,
+            model_name="llm-simulator",
+            input_type="text"
+        )
+
+        # Embedding distance (higher for out-of-distribution)
+        base_distance = 1.0 + random.random() * 2.0  # Normal: 1-3
+        if is_attack:
+            base_distance = 5.0 + random.random() * 10.0  # Attack: 5-15
+        self._security_metrics.record_embedding_distance(
+            distance=base_distance,
+            model_name="llm-simulator",
+            layer="output"
+        )
+
+        # Prediction stability (lower for adversarial)
+        stability = 0.9 + random.random() * 0.1  # Normal: 0.9-1.0
+        if is_attack:
+            stability = 0.3 + random.random() * 0.4  # Attack: 0.3-0.7
+        self._security_metrics.record_stability_score(
+            score=stability,
+            model_name="llm-simulator",
+            perturbation_type="gaussian"
+        )
+
+        # Unstable predictions (more likely for attacks)
+        if is_attack and random.random() < 0.4:
+            self._security_metrics.record_unstable_prediction(
+                model_name="llm-simulator",
+                perturbation_type="gaussian"
+            )
+
+        # Prediction confidence
+        confidence = 0.85 + random.random() * 0.14  # Normal: 0.85-0.99
+        if is_attack:
+            confidence = 0.5 + random.random() * 0.4  # Attack: 0.5-0.9
+        predicted_class = random.choice(["safe", "suspicious", "malicious"])
+        if is_compromised:
+            predicted_class = "malicious"
+        elif is_attack:
+            predicted_class = "suspicious"
+        self._security_metrics.record_prediction_confidence(
+            confidence=confidence,
+            model_name="llm-simulator",
+            predicted_class=predicted_class
+        )
+
+        # ===== BEHAVIOR PATTERN METRICS =====
+
+        # Prediction class distribution
+        self._security_metrics.record_prediction_class(
+            model_name="llm-simulator",
+            predicted_class=predicted_class
+        )
+
+        # Distribution PSI (drift detection) - update periodically
+        if random.random() < 0.1:  # 10% of requests update PSI
+            psi_score = 0.02 + random.random() * 0.08  # Normal: 0.02-0.1
+            if is_attack:
+                psi_score = 0.1 + random.random() * 0.15  # Attack: 0.1-0.25
+            self._security_metrics.record_distribution_psi(
+                psi_score=psi_score,
+                model_name="llm-simulator",
+                reference_window="1d"
+            )
+
+        # Per-class accuracy (periodic update)
+        if random.random() < 0.05:  # 5% update
+            for class_name in ["safe", "suspicious", "malicious"]:
+                accuracy = 0.85 + random.random() * 0.1  # 0.85-0.95
+                self._security_metrics.record_class_accuracy(
+                    accuracy=accuracy,
+                    model_name="llm-simulator",
+                    class_name=class_name
+                )
+
+        # ===== LLM PATTERN METRICS =====
+
+        # Prompt injection score
+        if is_attack:
+            for attack in attacks_detected:
+                injection_score = attack.get("confidence", 0.85)
+                self._security_metrics.record_prompt_injection_score(
+                    score=injection_score,
+                    model_name="llm-simulator",
+                    detection_method="rule_based"
+                )
+                # Security alert
+                self._security_metrics.record_security_alert(
+                    alert_type=attack.get("type", "unknown"),
+                    severity="critical" if is_compromised else "warning",
+                    pattern="llm"
+                )
+        else:
+            # Low score for clean requests
+            self._security_metrics.record_prompt_injection_score(
+                score=0.05 + random.random() * 0.1,  # 0.05-0.15
+                model_name="llm-simulator",
+                detection_method="rule_based"
+            )
+
+        # System prompt similarity (extraction detection)
+        similarity = 0.1 + random.random() * 0.2  # Normal: 0.1-0.3
+        if is_attack and "extraction" in str(attacks_detected).lower():
+            similarity = 0.5 + random.random() * 0.4  # Extraction: 0.5-0.9
+        self._security_metrics.record_system_prompt_similarity(
+            similarity=similarity,
+            model_name="llm-simulator"
+        )
+
+        # Policy violations
+        if is_compromised:
+            violation_type = "jailbreak" if "jailbreak" in str(attacks_detected).lower() else "content_filter"
+            self._security_metrics.record_policy_violation(
+                model_name="llm-simulator",
+                violation_type=violation_type,
+                severity="critical"
+            )
+        elif is_attack and random.random() < 0.3:
+            self._security_metrics.record_policy_violation(
+                model_name="llm-simulator",
+                violation_type="suspicious_content",
+                severity="warning"
+            )
+
+        # Tool calls (simulate agent behavior)
+        if random.random() < 0.15:  # 15% of requests include tool calls
+            tool_names = ["search", "calculate", "read_file", "web_fetch"]
+            dangerous_tools = ["shell_exec", "write_file", "execute_code"]
+
+            if is_compromised and random.random() < 0.5:
+                tool_name = random.choice(dangerous_tools)
+                is_dangerous = True
+            else:
+                tool_name = random.choice(tool_names)
+                is_dangerous = False
+
+            self._security_metrics.record_tool_call(
+                tool_name=tool_name,
+                user_id="stress_runner",
+                success=True,
+                is_dangerous=is_dangerous
+            )
 
     def _update_stats(self):
         """Update requests per second stat"""
