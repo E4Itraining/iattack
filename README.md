@@ -53,11 +53,37 @@ python -m llm_attack_lab --attack data_poisoning
 python -m llm_attack_lab --attack jailbreak
 ```
 
+## Observabilite et Monitoring
+
+Le lab inclut une infrastructure complete d'observabilite pour detecter et visualiser les attaques en temps reel.
+
+### Stack de Monitoring
+
+| Composant | Role | URL |
+|-----------|------|-----|
+| **Grafana** | Dashboards de visualisation | http://localhost:3000 |
+| **VictoriaMetrics** | Base de donnees time series | http://localhost:8428 |
+| **OpenTelemetry** | Pipeline de telemetrie | - |
+
+### Dashboards disponibles
+
+1. **LLM Attack Lab** (`/d/llm-attack-lab-main`) - Vue operationnelle
+2. **ML/LLM Security Metrics** (`/d/ml-security-metrics`) - Detection de securite
+
+### Lancer le stack complet
+
+```bash
+docker-compose up -d
+# Grafana: admin / llmattacklab
+```
+
+Pour plus de details, voir la [documentation complete d'observabilite](docs/OBSERVABILITY.md).
+
 ## Structure du Projet
 
 ```
 llm_attack_lab/
-├── __main__.py           # Point d'entrée
+├── __main__.py           # Point d'entree
 ├── core/
 │   ├── llm_simulator.py  # Simulateur de LLM
 │   └── attack_engine.py  # Moteur d'attaques
@@ -72,8 +98,21 @@ llm_attack_lab/
 ├── web/
 │   ├── app.py
 │   └── templates/
+├── monitoring/           # Module d'observabilite
+│   ├── metrics.py        # Collecteur de metriques
+│   ├── security_metrics.py
+│   ├── otel.py           # Integration OpenTelemetry
+│   └── alerts.py         # Systeme d'alertes
 └── utils/
     └── logger.py
+
+config/
+├── grafana/
+│   └── dashboards/       # Dashboards Grafana
+├── prometheus/
+│   └── rules/            # Regles d'alerte
+├── otel-collector-config.yaml
+└── vmagent.yaml
 ```
 
 ## Avertissement
