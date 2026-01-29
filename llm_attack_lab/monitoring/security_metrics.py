@@ -317,6 +317,81 @@ class SecurityMetricsCollector:
                 ["alert_type", "severity", "pattern"]
             )
 
+            # ===== ADVANCED SECURITY GAUGES =====
+
+            self._prom_metrics["security_risk_score"] = Gauge(
+                "security_risk_score",
+                "Overall security risk score (0-100)",
+                ["model_name", "risk_category"]
+            )
+
+            self._prom_metrics["security_threat_level"] = Gauge(
+                "security_threat_level",
+                "Current threat level (0=none, 1=low, 2=medium, 3=high, 4=critical)",
+                ["model_name"]
+            )
+
+            self._prom_metrics["attack_success_rate"] = Gauge(
+                "attack_success_rate",
+                "Attack success rate percentage (0-100)",
+                ["attack_type"]
+            )
+
+            self._prom_metrics["defense_effectiveness"] = Gauge(
+                "defense_effectiveness",
+                "Defense effectiveness score (0-100)",
+                ["defense_type"]
+            )
+
+            self._prom_metrics["active_threats_count"] = Gauge(
+                "active_threats_count",
+                "Number of currently active threats",
+                ["threat_type"]
+            )
+
+            self._prom_metrics["blocked_attacks_total"] = Counter(
+                "blocked_attacks_total",
+                "Total attacks blocked by defenses",
+                ["attack_type", "defense_type"]
+            )
+
+            self._prom_metrics["response_time_seconds"] = Histogram(
+                "defense_response_time_seconds",
+                "Defense response time in seconds",
+                ["defense_type"],
+                buckets=[0.001, 0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5]
+            )
+
+            self._prom_metrics["tokens_analyzed_total"] = Counter(
+                "tokens_analyzed_total",
+                "Total tokens analyzed for security threats",
+                ["model_name", "analysis_type"]
+            )
+
+            self._prom_metrics["suspicious_patterns_detected"] = Counter(
+                "suspicious_patterns_detected_total",
+                "Suspicious patterns detected in inputs",
+                ["pattern_type", "severity"]
+            )
+
+            self._prom_metrics["model_confidence_deviation"] = Gauge(
+                "model_confidence_deviation",
+                "Deviation from expected model confidence",
+                ["model_name"]
+            )
+
+            self._prom_metrics["attack_attempts_per_minute"] = Gauge(
+                "attack_attempts_per_minute",
+                "Current rate of attack attempts per minute",
+                ["attack_type"]
+            )
+
+            self._prom_metrics["session_risk_score"] = Gauge(
+                "session_risk_score",
+                "Risk score for the current session (0-100)",
+                ["session_id"]
+            )
+
             self._initialized = True
             logger.info("Security metrics initialized successfully")
 
@@ -441,6 +516,88 @@ class SecurityMetricsCollector:
                             self._prom_metrics["security_alerts_total"].labels(
                                 alert_type=atype, severity=sev, pattern=pattern
                             )
+
+            # Initialize advanced security gauges
+            risk_categories = ["overall", "prompt_injection", "jailbreak", "data_poisoning", "model_extraction"]
+            for model in models:
+                for cat in risk_categories:
+                    if "security_risk_score" in self._prom_metrics:
+                        self._prom_metrics["security_risk_score"].labels(
+                            model_name=model, risk_category=cat
+                        ).set(25.0)  # Default low risk
+
+                if "security_threat_level" in self._prom_metrics:
+                    self._prom_metrics["security_threat_level"].labels(
+                        model_name=model
+                    ).set(1)  # Low threat
+
+                if "model_confidence_deviation" in self._prom_metrics:
+                    self._prom_metrics["model_confidence_deviation"].labels(
+                        model_name=model
+                    ).set(0.05)
+
+            # Initialize attack success rates
+            attack_types = ["prompt_injection", "jailbreak", "data_poisoning", "model_extraction", "membership_inference"]
+            for atype in attack_types:
+                if "attack_success_rate" in self._prom_metrics:
+                    self._prom_metrics["attack_success_rate"].labels(
+                        attack_type=atype
+                    ).set(15.0)  # 15% default success rate
+
+                if "attack_attempts_per_minute" in self._prom_metrics:
+                    self._prom_metrics["attack_attempts_per_minute"].labels(
+                        attack_type=atype
+                    ).set(0)
+
+                if "active_threats_count" in self._prom_metrics:
+                    self._prom_metrics["active_threats_count"].labels(
+                        threat_type=atype
+                    ).set(0)
+
+            # Initialize defense effectiveness
+            defense_types = ["input_sanitizer", "guardrails", "output_filter", "rate_limiter", "anomaly_detector"]
+            for dtype in defense_types:
+                if "defense_effectiveness" in self._prom_metrics:
+                    self._prom_metrics["defense_effectiveness"].labels(
+                        defense_type=dtype
+                    ).set(85.0)  # 85% default effectiveness
+
+                if "response_time_seconds" in self._prom_metrics:
+                    self._prom_metrics["response_time_seconds"].labels(
+                        defense_type=dtype
+                    )
+
+            # Initialize blocked attacks
+            for atype in attack_types:
+                for dtype in defense_types:
+                    if "blocked_attacks_total" in self._prom_metrics:
+                        self._prom_metrics["blocked_attacks_total"].labels(
+                            attack_type=atype, defense_type=dtype
+                        )
+
+            # Initialize suspicious patterns
+            pattern_types = ["sql_injection", "command_injection", "xss", "prompt_leak", "role_confusion"]
+            for ptype in pattern_types:
+                for sev in severities:
+                    if "suspicious_patterns_detected" in self._prom_metrics:
+                        self._prom_metrics["suspicious_patterns_detected"].labels(
+                            pattern_type=ptype, severity=sev
+                        )
+
+            # Initialize tokens analyzed
+            analysis_types = ["security_scan", "prompt_analysis", "output_validation"]
+            for model in models:
+                for atype in analysis_types:
+                    if "tokens_analyzed_total" in self._prom_metrics:
+                        self._prom_metrics["tokens_analyzed_total"].labels(
+                            model_name=model, analysis_type=atype
+                        )
+
+            # Initialize session risk
+            if "session_risk_score" in self._prom_metrics:
+                self._prom_metrics["session_risk_score"].labels(
+                    session_id="default"
+                ).set(20.0)
 
             logger.info("Security metrics baseline initialized for Grafana dashboards")
 
@@ -711,6 +868,194 @@ class SecurityMetricsCollector:
                 severity=severity,
                 pattern=pattern
             ).inc()
+
+    # ===== ADVANCED SECURITY METRICS RECORDING =====
+
+    def record_risk_score(
+        self,
+        score: float,
+        model_name: str = "default",
+        risk_category: str = "overall"
+    ):
+        """Record security risk score (0-100)"""
+        self._record_to_history("security_risk_score", score, {
+            "model_name": model_name, "risk_category": risk_category
+        })
+
+        if "security_risk_score" in self._prom_metrics:
+            self._prom_metrics["security_risk_score"].labels(
+                model_name=model_name,
+                risk_category=risk_category
+            ).set(score)
+
+    def record_threat_level(
+        self,
+        level: int,
+        model_name: str = "default"
+    ):
+        """Record current threat level (0-4)"""
+        self._record_to_history("security_threat_level", level, {
+            "model_name": model_name
+        })
+
+        if "security_threat_level" in self._prom_metrics:
+            self._prom_metrics["security_threat_level"].labels(
+                model_name=model_name
+            ).set(level)
+
+    def record_attack_success_rate(
+        self,
+        rate: float,
+        attack_type: str
+    ):
+        """Record attack success rate percentage (0-100)"""
+        self._record_to_history("attack_success_rate", rate, {
+            "attack_type": attack_type
+        })
+
+        if "attack_success_rate" in self._prom_metrics:
+            self._prom_metrics["attack_success_rate"].labels(
+                attack_type=attack_type
+            ).set(rate)
+
+    def record_defense_effectiveness(
+        self,
+        effectiveness: float,
+        defense_type: str
+    ):
+        """Record defense effectiveness score (0-100)"""
+        self._record_to_history("defense_effectiveness", effectiveness, {
+            "defense_type": defense_type
+        })
+
+        if "defense_effectiveness" in self._prom_metrics:
+            self._prom_metrics["defense_effectiveness"].labels(
+                defense_type=defense_type
+            ).set(effectiveness)
+
+    def record_active_threats(
+        self,
+        count: int,
+        threat_type: str
+    ):
+        """Record number of active threats"""
+        self._record_to_history("active_threats_count", count, {
+            "threat_type": threat_type
+        })
+
+        if "active_threats_count" in self._prom_metrics:
+            self._prom_metrics["active_threats_count"].labels(
+                threat_type=threat_type
+            ).set(count)
+
+    def record_blocked_attack(
+        self,
+        attack_type: str,
+        defense_type: str
+    ):
+        """Record a blocked attack"""
+        self._record_to_history("blocked_attacks_total", 1, {
+            "attack_type": attack_type, "defense_type": defense_type
+        })
+
+        if "blocked_attacks_total" in self._prom_metrics:
+            self._prom_metrics["blocked_attacks_total"].labels(
+                attack_type=attack_type,
+                defense_type=defense_type
+            ).inc()
+
+    def record_defense_response_time(
+        self,
+        duration: float,
+        defense_type: str
+    ):
+        """Record defense response time in seconds"""
+        self._record_to_history("response_time_seconds", duration, {
+            "defense_type": defense_type
+        })
+
+        if "response_time_seconds" in self._prom_metrics:
+            self._prom_metrics["response_time_seconds"].labels(
+                defense_type=defense_type
+            ).observe(duration)
+
+    def record_tokens_analyzed(
+        self,
+        count: int,
+        model_name: str = "default",
+        analysis_type: str = "security_scan"
+    ):
+        """Record tokens analyzed for security"""
+        self._record_to_history("tokens_analyzed_total", count, {
+            "model_name": model_name, "analysis_type": analysis_type
+        })
+
+        if "tokens_analyzed_total" in self._prom_metrics:
+            self._prom_metrics["tokens_analyzed_total"].labels(
+                model_name=model_name,
+                analysis_type=analysis_type
+            ).inc(count)
+
+    def record_suspicious_pattern(
+        self,
+        pattern_type: str,
+        severity: str = "warning"
+    ):
+        """Record detection of a suspicious pattern"""
+        self._record_to_history("suspicious_patterns_detected", 1, {
+            "pattern_type": pattern_type, "severity": severity
+        })
+
+        if "suspicious_patterns_detected" in self._prom_metrics:
+            self._prom_metrics["suspicious_patterns_detected"].labels(
+                pattern_type=pattern_type,
+                severity=severity
+            ).inc()
+
+    def record_attack_attempts_rate(
+        self,
+        rate: float,
+        attack_type: str
+    ):
+        """Record current rate of attack attempts per minute"""
+        self._record_to_history("attack_attempts_per_minute", rate, {
+            "attack_type": attack_type
+        })
+
+        if "attack_attempts_per_minute" in self._prom_metrics:
+            self._prom_metrics["attack_attempts_per_minute"].labels(
+                attack_type=attack_type
+            ).set(rate)
+
+    def record_session_risk(
+        self,
+        score: float,
+        session_id: str = "default"
+    ):
+        """Record session risk score (0-100)"""
+        self._record_to_history("session_risk_score", score, {
+            "session_id": session_id
+        })
+
+        if "session_risk_score" in self._prom_metrics:
+            self._prom_metrics["session_risk_score"].labels(
+                session_id=session_id
+            ).set(score)
+
+    def record_confidence_deviation(
+        self,
+        deviation: float,
+        model_name: str = "default"
+    ):
+        """Record deviation from expected model confidence"""
+        self._record_to_history("model_confidence_deviation", deviation, {
+            "model_name": model_name
+        })
+
+        if "model_confidence_deviation" in self._prom_metrics:
+            self._prom_metrics["model_confidence_deviation"].labels(
+                model_name=model_name
+            ).set(deviation)
 
     # ===== THRESHOLD MANAGEMENT =====
 
