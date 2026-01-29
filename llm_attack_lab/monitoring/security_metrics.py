@@ -424,8 +424,15 @@ class SecurityMetricsCollector:
                         tool_name=tool, user_id="system", success="true", is_dangerous=is_dangerous
                     )
 
-            # Initialize security alerts
-            alert_types = ["prompt_injection", "jailbreak", "data_poisoning", "extraction"]
+            # Initialize security alerts - ALL attack types from the registry
+            alert_types = [
+                "prompt_injection",
+                "jailbreak",
+                "data_poisoning",
+                "model_extraction",
+                "membership_inference",
+                "extraction"  # alias for model_extraction
+            ]
             patterns = ["llm", "adversarial", "behavior"]
             for atype in alert_types:
                 for sev in severities:

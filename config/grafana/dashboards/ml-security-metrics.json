@@ -3,10 +3,7 @@
     "list": [
       {
         "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
+        "datasource": { "type": "grafana", "uid": "-- Grafana --" },
         "enable": true,
         "hide": true,
         "iconColor": "rgba(0, 211, 255, 1)",
@@ -15,7 +12,7 @@
       }
     ]
   },
-  "description": "Comprehensive ML/LLM Security Metrics Dashboard for Attack Detection",
+  "description": "ML/LLM Security Metrics - Organized by Attack Type",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -41,7 +38,7 @@
       "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
       "id": 100,
       "panels": [],
-      "title": "Security Overview",
+      "title": "Overview - Security Status",
       "type": "row"
     },
     {
@@ -71,14 +68,12 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
           "expr": "sum(increase(security_alerts_total{severity=\"critical\"}[1h])) or vector(0)",
-          "legendFormat": "Critical Alerts",
-          "range": true,
+          "legendFormat": "Critical",
           "refId": "A"
         }
       ],
@@ -112,14 +107,12 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
           "expr": "sum(increase(security_alerts_total{severity=\"warning\"}[1h])) or vector(0)",
-          "legendFormat": "Warning Alerts",
-          "range": true,
+          "legendFormat": "Warning",
           "refId": "A"
         }
       ],
@@ -132,17 +125,14 @@
         "defaults": {
           "color": { "mode": "thresholds" },
           "mappings": [],
-          "max": 1,
-          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "red", "value": 0.85 }
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 15 }
             ]
-          },
-          "unit": "percentunit"
+          }
         },
         "overrides": []
       },
@@ -156,18 +146,16 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(llm_prompt_injection_score_bucket[5m])) or vector(0)",
-          "legendFormat": "Injection Score p95",
-          "range": true,
+          "expr": "sum(increase(security_alerts_total{alert_type=\"prompt_injection\"}[1h])) or vector(0)",
+          "legendFormat": "Prompt Injection",
           "refId": "A"
         }
       ],
-      "title": "Injection Score (p95)",
+      "title": "Prompt Injection (1h)",
       "type": "stat"
     },
     {
@@ -180,8 +168,8 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.1 },
-              { "color": "red", "value": 0.2 }
+              { "color": "yellow", "value": 3 },
+              { "color": "red", "value": 10 }
             ]
           }
         },
@@ -197,18 +185,16 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_prediction_distribution_psi or vector(0)",
-          "legendFormat": "PSI Score",
-          "range": true,
+          "expr": "sum(increase(security_alerts_total{alert_type=\"jailbreak\"}[1h])) or vector(0)",
+          "legendFormat": "Jailbreak",
           "refId": "A"
         }
       ],
-      "title": "Distribution PSI",
+      "title": "Jailbreak (1h)",
       "type": "stat"
     },
     {
@@ -222,7 +208,7 @@
             "steps": [
               { "color": "green", "value": null },
               { "color": "yellow", "value": 2 },
-              { "color": "red", "value": 2.5 }
+              { "color": "red", "value": 5 }
             ]
           }
         },
@@ -238,18 +224,16 @@
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(ml_input_reconstruction_error_bucket[5m])) or vector(0)",
-          "legendFormat": "Reconstruction Error p95",
-          "range": true,
+          "expr": "sum(increase(security_alerts_total{alert_type=\"data_poisoning\"}[1h])) or vector(0)",
+          "legendFormat": "Data Poisoning",
           "refId": "A"
         }
       ],
-      "title": "Reconstruction Error (p95)",
+      "title": "Data Poisoning (1h)",
       "type": "stat"
     },
     {
@@ -262,8 +246,8 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
-              { "color": "yellow", "value": 50 },
-              { "color": "red", "value": 100 }
+              { "color": "yellow", "value": 2 },
+              { "color": "red", "value": 5 }
             ]
           }
         },
@@ -273,36 +257,193 @@
       "id": 106,
       "options": {
         "colorMode": "value",
-        "graphMode": "none",
+        "graphMode": "area",
         "justifyMode": "auto",
         "orientation": "auto",
         "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
         "textMode": "auto"
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum(increase(llm_output_policy_violations_total[1h])) or vector(0)",
-          "legendFormat": "Policy Violations",
-          "range": true,
+          "expr": "sum(increase(security_alerts_total{alert_type=\"model_extraction\"}[1h])) or vector(0)",
+          "legendFormat": "Model Extraction",
           "refId": "A"
         }
       ],
-      "title": "Policy Violations (1h)",
+      "title": "Model Extraction (1h)",
       "type": "stat"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "prompt_injection" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "jailbreak" }, "properties": [{ "id": "color", "value": { "fixedColor": "orange", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "data_poisoning" }, "properties": [{ "id": "color", "value": { "fixedColor": "purple", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "model_extraction" }, "properties": [{ "id": "color", "value": { "fixedColor": "blue", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "membership_inference" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 5 },
+      "id": 107,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (alert_type) (increase(security_alerts_total[1h])) or vector(0)",
+          "legendFormat": "{{ alert_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Alerts by Attack Type (1h)",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Alerts/min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 5 },
+      "id": 108,
+      "options": {
+        "legend": { "calcs": ["sum", "mean"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (alert_type) (rate(security_alerts_total[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ alert_type }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Attack Detection Rate Over Time",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 5 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 13 },
       "id": 200,
       "panels": [],
-      "title": "Adversarial Detection",
+      "title": "Prompt Injection - Detection Panels",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Score de detection d'injection de prompt (0-1). Score > 0.85 = attaque probable.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Score",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "max": 1,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.85 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 14 },
+      "id": 201,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.50, rate(llm_prompt_injection_score_bucket{attack_type=\"prompt_injection\"}[5m])) or histogram_quantile(0.50, rate(llm_prompt_injection_score_bucket[5m])) or vector(0)",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(llm_prompt_injection_score_bucket{attack_type=\"prompt_injection\"}[5m])) or histogram_quantile(0.95, rate(llm_prompt_injection_score_bucket[5m])) or vector(0)",
+          "legendFormat": "p95",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(llm_prompt_injection_score_bucket{attack_type=\"prompt_injection\"}[5m])) or histogram_quantile(0.99, rate(llm_prompt_injection_score_bucket[5m])) or vector(0)",
+          "legendFormat": "p99",
+          "refId": "C"
+        }
+      ],
+      "title": "Prompt Injection Score Distribution",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Erreur de reconstruction de l'autoencoder. Valeur elevee = entree anormale/malveillante.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -325,94 +466,21 @@
             "showPoints": "never",
             "spanNulls": false,
             "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": {
-              "mode": "line"
-            }
+            "thresholdsStyle": { "mode": "line" }
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
+              { "color": "yellow", "value": 1.5 },
               { "color": "red", "value": 2.5 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 6 },
-      "id": 201,
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.50, rate(ml_input_reconstruction_error_bucket[5m]))",
-          "legendFormat": "p50 - {{ model_name }}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(ml_input_reconstruction_error_bucket[5m]))",
-          "legendFormat": "p95 - {{ model_name }}",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, rate(ml_input_reconstruction_error_bucket[5m]))",
-          "legendFormat": "p99 - {{ model_name }}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Input Reconstruction Error",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Distance",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 10,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "dashed" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 10 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 6 },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 14 },
       "id": 202,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
@@ -422,25 +490,24 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(ml_embedding_distance_to_centroid_bucket[5m]))",
-          "legendFormat": "{{ model_name }} - {{ layer }}",
-          "range": true,
+          "expr": "histogram_quantile(0.50, rate(ml_input_reconstruction_error_bucket[5m])) or vector(0)",
+          "legendFormat": "p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_embedding_distance_threshold * 3",
-          "legendFormat": "Threshold (3x)",
-          "range": true,
+          "expr": "histogram_quantile(0.95, rate(ml_input_reconstruction_error_bucket[5m])) or vector(0)",
+          "legendFormat": "p95",
           "refId": "B"
         }
       ],
-      "title": "Embedding Distance to Centroid",
+      "title": "Input Reconstruction Error (Anomaly Detection)",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Nombre d'alertes prompt injection detectees par minute.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -448,7 +515,57 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Score",
+            "axisLabel": "Alerts/min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": null }] }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "id": 203,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (severity) (rate(security_alerts_total{alert_type=\"prompt_injection\"}[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ severity }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prompt Injection Alerts Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Score de stabilite des predictions. Score bas = entree adversariale probable.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Stability",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -463,18 +580,24 @@
             "showPoints": "never",
             "spanNulls": false,
             "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "off" }
+            "thresholdsStyle": { "mode": "line" }
           },
           "mappings": [],
+          "max": 1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
+            "steps": [
+              { "color": "red", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "green", "value": 0.8 }
+            ]
           }
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 14 },
-      "id": 203,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "id": 204,
       "options": {
         "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -483,9 +606,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_prediction_stability_score",
+          "expr": "ml_prediction_stability_score or vector(0)",
           "legendFormat": "{{ model_name }} - {{ perturbation_type }}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -493,7 +615,212 @@
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 30 },
+      "id": 300,
+      "panels": [],
+      "title": "Jailbreak - Detection Panels",
+      "type": "row"
+    },
+    {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Violations de politique de contenu par type et severite. Indicateur de tentatives de jailbreak.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Violations/min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*critical.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
+      "id": 301,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (violation_type, severity) (rate(llm_output_policy_violations_total[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ violation_type }} ({{ severity }})",
+          "refId": "A"
+        }
+      ],
+      "title": "Policy Violations by Type",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Appels aux outils/fonctions par le LLM. Surveille les outils dangereux (shell, write).",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Calls/5min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "red", "value": 5 }
+            ]
+          }
+        },
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": ".*shell.*|.*exec.*|.*write.*" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
+      "id": 302,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (tool_name) (rate(llm_tool_calls_total[5m])) * 300 or vector(0)",
+          "legendFormat": "{{ tool_name }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Tool Calls by Name (Agent Attacks)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Ratio d'appels d'outils dangereux vs securises.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": []
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "true" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }, { "id": "displayName", "value": "Dangerous" }] },
+          { "matcher": { "id": "byName", "options": "false" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }, { "id": "displayName", "value": "Safe" }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 39 },
+      "id": 303,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (is_dangerous) (increase(llm_tool_calls_total[1h])) or vector(0)",
+          "legendFormat": "{{ is_dangerous }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Safe vs Dangerous Tool Calls",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Alertes jailbreak par severite.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Alerts",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "orange", "value": null }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 39 },
+      "id": 304,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (severity) (rate(security_alerts_total{alert_type=\"jailbreak\"}[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ severity }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Jailbreak Alerts Rate",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Taux de predictions instables - indicateur d'entrees adversariales.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -519,15 +846,12 @@
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] }
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 14 },
-      "id": 204,
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 39 },
+      "id": 305,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -536,9 +860,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "rate(ml_unstable_predictions_total[5m])",
+          "expr": "rate(ml_unstable_predictions_total[5m]) or vector(0)",
           "legendFormat": "{{ model_name }} - {{ perturbation_type }}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -546,49 +869,16 @@
       "type": "timeseries"
     },
     {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
-          },
-          "mappings": [],
-          "unit": "percentunit"
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 14 },
-      "id": 205,
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
-        "pieType": "donut",
-        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.5, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
-          "legendFormat": "{{ predicted_class }}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Prediction Confidence Distribution",
-      "type": "piechart"
-    },
-    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 22 },
-      "id": 300,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
+      "id": 400,
       "panels": [],
-      "title": "Behavior Analysis",
+      "title": "Data Poisoning - Detection Panels",
       "type": "row"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Population Stability Index - detecte la derive des donnees. PSI > 0.2 = changement significatif.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -625,8 +915,8 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 23 },
-      "id": 301,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 48 },
+      "id": 401,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -635,9 +925,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_prediction_distribution_psi",
+          "expr": "ml_prediction_distribution_psi or vector(0)",
           "legendFormat": "{{ model_name }} - {{ reference_window }}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -646,6 +935,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Precision par classe vs baseline. Chute > 10% = empoisonnement possible.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -673,16 +963,15 @@
           "mappings": [],
           "max": 1,
           "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          },
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] },
           "unit": "percentunit"
         },
-        "overrides": []
+        "overrides": [
+          { "matcher": { "id": "byRegexp", "options": "Baseline.*" }, "properties": [{ "id": "custom.lineStyle", "value": { "dash": [10, 10], "fill": "dash" } }] }
+        ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 23 },
-      "id": 302,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 48 },
+      "id": 402,
       "options": {
         "legend": { "calcs": ["mean", "lastNotNull"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -691,17 +980,15 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_accuracy_by_class",
-          "legendFormat": "{{ class_name }}",
-          "range": true,
+          "expr": "ml_accuracy_by_class or vector(0)",
+          "legendFormat": "Current - {{ class_name }}",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "ml_baseline_accuracy",
+          "expr": "ml_baseline_accuracy or vector(0)",
           "legendFormat": "Baseline - {{ class_name }}",
-          "range": true,
           "refId": "B"
         }
       ],
@@ -710,6 +997,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Distribution des predictions par classe - changement soudain = empoisonnement.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -735,15 +1023,16 @@
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
         },
-        "overrides": []
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "malicious" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "suspicious" }, "properties": [{ "id": "color", "value": { "fixedColor": "yellow", "mode": "fixed" } }] },
+          { "matcher": { "id": "byName", "options": "safe" }, "properties": [{ "id": "color", "value": { "fixedColor": "green", "mode": "fixed" } }] }
+        ]
       },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 31 },
-      "id": 303,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 56 },
+      "id": 403,
       "options": {
         "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -752,9 +1041,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "rate(ml_predictions_by_class_total[5m])",
+          "expr": "sum by (predicted_class) (rate(ml_predictions_by_class_total[5m])) or vector(0)",
           "legendFormat": "{{ predicted_class }}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -763,6 +1051,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Alertes data poisoning par severite.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -770,7 +1059,67 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Queries",
+            "axisLabel": "Alerts/min",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
+          },
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "purple", "value": null }] }
+        },
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 56 },
+      "id": 404,
+      "options": {
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "sum by (severity) (rate(security_alerts_total{alert_type=\"data_poisoning\"}[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ severity }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Data Poisoning Alerts Rate",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 64 },
+      "id": 500,
+      "panels": [],
+      "title": "Model Extraction - Detection Panels",
+      "type": "row"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Requetes API par utilisateur. Volume eleve = tentative d'extraction de modele.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Queries/10min",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "line",
@@ -792,14 +1141,15 @@
             "mode": "absolute",
             "steps": [
               { "color": "green", "value": null },
+              { "color": "yellow", "value": 50 },
               { "color": "red", "value": 100 }
             ]
           }
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 31 },
-      "id": 304,
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 65 },
+      "id": 501,
       "options": {
         "legend": { "calcs": ["sum", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -808,9 +1158,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum by (user_id) (rate(ml_api_queries_total[10m])) * 600",
+          "expr": "sum by (user_id) (rate(ml_api_queries_total[10m])) * 600 or vector(0)",
           "legendFormat": "{{ user_id }}",
-          "range": true,
           "refId": "A"
         }
       ],
@@ -819,163 +1168,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "description": "Detects potential membership inference attacks by monitoring confidence score patterns combined with query rates",
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Score",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.9 },
-              { "color": "red", "value": 0.95 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 39 },
-      "id": 305,
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
-          "legendFormat": "Confidence p99",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "(sum(rate(ml_api_queries_total[5m])) / 10) or vector(0)",
-          "legendFormat": "Query Rate (normalized)",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "avg(ml_embedding_distance_to_centroid) or vector(0)",
-          "legendFormat": "Avg Embedding Distance",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Membership Inference Detection",
-      "type": "timeseries"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
-      "id": 400,
-      "panels": [],
-      "title": "LLM Security",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "palette-classic" },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "Score",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 20,
-            "gradientMode": "none",
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 2,
-            "pointSize": 5,
-            "scaleDistribution": { "type": "linear" },
-            "showPoints": "never",
-            "spanNulls": false,
-            "stacking": { "group": "A", "mode": "none" },
-            "thresholdsStyle": { "mode": "line" }
-          },
-          "mappings": [],
-          "max": 1,
-          "min": 0,
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "yellow", "value": 0.5 },
-              { "color": "red", "value": 0.85 }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 40 },
-      "id": 401,
-      "options": {
-        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
-        "tooltip": { "mode": "multi", "sort": "desc" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.50, rate(llm_prompt_injection_score_bucket[5m]))",
-          "legendFormat": "p50 - {{ detection_method }}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(llm_prompt_injection_score_bucket[5m]))",
-          "legendFormat": "p95 - {{ detection_method }}",
-          "range": true,
-          "refId": "B"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, rate(llm_prompt_injection_score_bucket[5m]))",
-          "legendFormat": "p99 - {{ detection_method }}",
-          "range": true,
-          "refId": "C"
-        }
-      ],
-      "title": "Prompt Injection Score",
-      "type": "timeseries"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Similarite entre l'entree et le prompt systeme. Score eleve = tentative d'extraction.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -1014,8 +1207,8 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 40 },
-      "id": 402,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 65 },
+      "id": 502,
       "options": {
         "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
@@ -1024,9 +1217,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, rate(llm_prompt_similarity_to_system_bucket[5m]))",
-          "legendFormat": "{{ model_name }}",
-          "range": true,
+          "expr": "histogram_quantile(0.95, rate(llm_prompt_similarity_to_system_bucket[5m])) or vector(0)",
+          "legendFormat": "p95 - {{ model_name }}",
           "refId": "A"
         }
       ],
@@ -1035,6 +1227,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Distance de l'embedding au centroide. Distance elevee = entree hors distribution.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -1042,7 +1235,71 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Rate/s",
+            "axisLabel": "Distance",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "dashed" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 5 },
+              { "color": "red", "value": 10 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 73 },
+      "id": 503,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.95, rate(ml_embedding_distance_to_centroid_bucket[5m])) or vector(0)",
+          "legendFormat": "{{ model_name }} - {{ layer }}",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "ml_embedding_distance_threshold * 3 or vector(0)",
+          "legendFormat": "Threshold (3x)",
+          "refId": "B"
+        }
+      ],
+      "title": "Embedding Distance to Centroid",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Alertes model extraction par severite.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Alerts/min",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "bars",
@@ -1060,34 +1317,41 @@
             "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [{ "color": "green", "value": null }]
-          }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "blue", "value": null }] }
         },
-        "overrides": []
+        "overrides": [
+          { "matcher": { "id": "byName", "options": "critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
+        ]
       },
-      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 48 },
-      "id": 403,
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 73 },
+      "id": 504,
       "options": {
-        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "rate(llm_output_policy_violations_total[5m])",
-          "legendFormat": "{{ violation_type }} - {{ severity }}",
-          "range": true,
+          "expr": "sum by (severity) (rate(security_alerts_total{alert_type=\"model_extraction\"}[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ severity }}",
           "refId": "A"
         }
       ],
-      "title": "Policy Violations by Type",
+      "title": "Model Extraction Alerts Rate",
       "type": "timeseries"
     },
     {
+      "collapsed": false,
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 81 },
+      "id": 600,
+      "panels": [],
+      "title": "Membership Inference - Detection Panels",
+      "type": "row"
+    },
+    {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Detection d'inference d'appartenance - confiance elevee combinee avec volume de requetes.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -1095,7 +1359,110 @@
             "axisBorderShow": false,
             "axisCenteredZero": false,
             "axisColorMode": "text",
-            "axisLabel": "Calls/5min",
+            "axisLabel": "Score",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.9 },
+              { "color": "red", "value": 0.95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 82 },
+      "id": 601,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
+          "legendFormat": "Confidence p99",
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "(sum(rate(ml_api_queries_total[5m])) / 10) or vector(0)",
+          "legendFormat": "Query Rate (normalized)",
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "avg(ml_embedding_distance_to_centroid) / 10 or vector(0)",
+          "legendFormat": "Avg Embedding Distance (normalized)",
+          "refId": "C"
+        }
+      ],
+      "title": "Membership Inference Detection",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Distribution de confiance des predictions par classe.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": { "hideFrom": { "legend": false, "tooltip": false, "viz": false } },
+          "mappings": [],
+          "unit": "percentunit"
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 90 },
+      "id": 602,
+      "options": {
+        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
+        "pieType": "donut",
+        "reduceOptions": { "calcs": ["lastNotNull"], "fields": "", "values": false },
+        "tooltip": { "mode": "single", "sort": "none" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.5, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
+          "legendFormat": "{{ predicted_class }}",
+          "refId": "A"
+        }
+      ],
+      "title": "Prediction Confidence by Class",
+      "type": "piechart"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Alertes membership inference par severite.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Alerts/min",
             "axisPlacement": "auto",
             "barAlignment": 0,
             "drawStyle": "bars",
@@ -1110,244 +1477,89 @@
             "showPoints": "never",
             "spanNulls": false,
             "stacking": { "group": "A", "mode": "normal" },
-            "thresholdsStyle": { "mode": "line" }
+            "thresholdsStyle": { "mode": "off" }
           },
           "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "green", "value": null },
-              { "color": "red", "value": 5 }
-            ]
-          }
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "yellow", "value": null }] }
         },
         "overrides": [
-          {
-            "matcher": { "id": "byRegexp", "options": ".*shell.*|.*exec.*|.*write.*" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
-          }
+          { "matcher": { "id": "byName", "options": "critical" }, "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }] }
         ]
       },
-      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 48 },
-      "id": 404,
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 90 },
+      "id": 603,
       "options": {
-        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
         "tooltip": { "mode": "multi", "sort": "desc" }
       },
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum by (tool_name, user_id) (rate(llm_tool_calls_total[5m])) * 300",
-          "legendFormat": "{{ tool_name }} ({{ user_id }})",
-          "range": true,
+          "expr": "sum by (severity) (rate(security_alerts_total{alert_type=\"membership_inference\"}[5m])) * 60 or vector(0)",
+          "legendFormat": "{{ severity }}",
           "refId": "A"
         }
       ],
-      "title": "Tool Calls by Name/User",
+      "title": "Membership Inference Alerts Rate",
       "type": "timeseries"
     },
     {
       "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Requetes par endpoint - patterns suspects pour inference.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": {
-            "hideFrom": { "legend": false, "tooltip": false, "viz": false }
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Queries",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "bars",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "normal" },
+            "thresholdsStyle": { "mode": "off" }
           },
-          "mappings": []
-        },
-        "overrides": [
-          {
-            "matcher": { "id": "byName", "options": "is_dangerous=true" },
-            "properties": [{ "id": "color", "value": { "fixedColor": "red", "mode": "fixed" } }]
-          }
-        ]
-      },
-      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 48 },
-      "id": 405,
-      "options": {
-        "legend": { "displayMode": "table", "placement": "right", "showLegend": true, "values": ["value", "percent"] },
-        "pieType": "donut",
-        "reduceOptions": { "calcs": ["sum"], "fields": "", "values": false },
-        "tooltip": { "mode": "single", "sort": "none" }
-      },
-      "targets": [
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "expr": "sum by (is_dangerous) (increase(llm_tool_calls_total[1h])) or vector(0)",
-          "legendFormat": "{{ is_dangerous }}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Tool Calls: Safe vs Dangerous",
-      "type": "piechart"
-    },
-    {
-      "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 56 },
-      "id": 500,
-      "panels": [],
-      "title": "Attack Coverage Matrix",
-      "type": "row"
-    },
-    {
-      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-      "fieldConfig": {
-        "defaults": {
-          "color": { "mode": "thresholds" },
-          "custom": {
-            "align": "center",
-            "cellOptions": { "type": "color-background" },
-            "inspect": false
-          },
-          "mappings": [
-            { "options": { "0": { "color": "transparent", "index": 0, "text": "" } }, "type": "value" },
-            { "options": { "from": 0.01, "result": { "color": "green", "index": 1, "text": "Active" }, "to": 999999 }, "type": "range" }
-          ],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              { "color": "transparent", "value": null },
-              { "color": "green", "value": 0.01 }
-            ]
-          }
+          "mappings": [],
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "green", "value": null }] }
         },
         "overrides": []
       },
-      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 57 },
-      "id": 501,
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 90 },
+      "id": 604,
       "options": {
-        "cellHeight": "sm",
-        "footer": { "countRows": false, "fields": "", "reducer": ["sum"], "show": false },
-        "showHeader": true,
-        "sortBy": []
+        "legend": { "calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
       },
-      "pluginVersion": "10.2.3",
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(ml_input_reconstruction_error_count[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Adversarial",
-          "range": false,
-          "refId": "reconstruction"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(ml_embedding_distance_to_centroid_count[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "OOD",
-          "range": false,
-          "refId": "embedding"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(ml_unstable_predictions_total[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Instability",
-          "range": false,
-          "refId": "unstable"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(ml_prediction_distribution_psi) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Drift",
-          "range": false,
-          "refId": "psi"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(llm_prompt_injection_score_count[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Injection",
-          "range": false,
-          "refId": "injection"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(llm_output_policy_violations_total[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Jailbreak",
-          "range": false,
-          "refId": "violations"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "(histogram_quantile(0.99, rate(ml_prediction_confidence_bucket[5m])) > 0.9) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Membership Inference",
-          "range": false,
-          "refId": "membership"
-        },
-        {
-          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "sum(rate(llm_prompt_similarity_to_system_count[5m])) or vector(0)",
-          "format": "table",
-          "instant": true,
-          "legendFormat": "Extraction",
-          "range": false,
-          "refId": "extraction"
+          "expr": "sum by (endpoint) (rate(ml_api_queries_total[5m])) * 300 or vector(0)",
+          "legendFormat": "{{ endpoint }}",
+          "refId": "A"
         }
       ],
-      "title": "Active Security Monitoring Coverage",
-      "transformations": [
-        {
-          "id": "merge",
-          "options": {}
-        }
-      ],
-      "type": "table"
+      "title": "API Queries by Endpoint",
+      "type": "timeseries"
     }
   ],
   "refresh": "10s",
   "schemaVersion": 38,
-  "tags": ["security", "ml", "llm", "adversarial", "monitoring"],
+  "tags": ["security", "ml", "llm", "attacks", "monitoring"],
   "templating": {
-    "list": [
-      {
-        "current": { "selected": false, "text": "All", "value": "$__all" },
-        "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
-        "definition": "label_values(ml_input_reconstruction_error_bucket, model_name)",
-        "hide": 0,
-        "includeAll": true,
-        "multi": true,
-        "name": "model",
-        "options": [],
-        "query": { "query": "label_values(ml_input_reconstruction_error_bucket, model_name)", "refId": "StandardVariableQuery" },
-        "refresh": 2,
-        "regex": "",
-        "skipUrlSync": false,
-        "sort": 1,
-        "type": "query"
-      }
-    ]
+    "list": []
   },
   "time": { "from": "now-1h", "to": "now" },
   "timepicker": {},
