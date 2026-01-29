@@ -67,7 +67,10 @@ class OTelConfig:
     def __init__(self):
         self.service_name = os.getenv("OTEL_SERVICE_NAME", "llm-attack-lab")
         self.service_version = os.getenv("OTEL_SERVICE_VERSION", "1.0.0")
-        self.otlp_endpoint = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "http://otel-collector:4317")
+        # Raw endpoint from environment (may include http:// prefix)
+        self._otlp_endpoint_raw = os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT", "otel-collector:4317")
+        # gRPC endpoint must NOT have http:// prefix - strip it if present
+        self.otlp_endpoint = self._normalize_grpc_endpoint(self._otlp_endpoint_raw)
         self.prometheus_port = int(os.getenv("PROMETHEUS_METRICS_PORT", "8000"))
         self.prometheus_port_auto = os.getenv("PROMETHEUS_PORT_AUTO", "true").lower() == "true"
         self.prometheus_port_range = int(os.getenv("PROMETHEUS_PORT_RANGE", "10"))
@@ -82,6 +85,27 @@ class OTelConfig:
         self.schedule_delay_millis = int(os.getenv("OTEL_BSP_SCHEDULE_DELAY_MILLIS", "5000"))
         self.metrics_export_interval_millis = int(os.getenv("OTEL_METRIC_EXPORT_INTERVAL", "15000"))
         self.collector_wait_timeout = int(os.getenv("OTEL_COLLECTOR_WAIT_TIMEOUT", "60"))
+
+    @staticmethod
+    def _normalize_grpc_endpoint(endpoint: str) -> str:
+        """
+        Normalize endpoint for gRPC exporter.
+
+        The gRPC OTLP exporter expects endpoint in format 'host:port' without
+        the http:// or https:// scheme prefix. This method strips the scheme
+        if present to ensure compatibility.
+
+        Args:
+            endpoint: Raw endpoint string (e.g., 'http://otel-collector:4317')
+
+        Returns:
+            Normalized endpoint (e.g., 'otel-collector:4317')
+        """
+        if endpoint.startswith("http://"):
+            return endpoint[7:]  # Remove 'http://'
+        elif endpoint.startswith("https://"):
+            return endpoint[8:]  # Remove 'https://'
+        return endpoint
 
 
 class OTelManager:

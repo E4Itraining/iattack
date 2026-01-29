@@ -17,7 +17,7 @@ services:
       - FLASK_DEBUG=false
       - OTEL_SERVICE_NAME=llm-attack-lab
       - OTEL_SERVICE_VERSION=1.0.0
-      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - OTEL_EXPORTER_OTLP_ENDPOINT=otel-collector:4317
       - OTEL_ENABLE_TRACING=true
       - OTEL_ENABLE_METRICS=true
       - PROMETHEUS_METRICS_PORT=8000
