@@ -871,6 +871,12 @@
                     </svg>
                     Grafana
                 </a>
+                <button class="btn btn-primary" id="btn-start-stress-header" onclick="startStress()" style="background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%); font-weight: bold;">
+                    Start Stress
+                </button>
+                <button class="btn btn-danger" id="btn-stop-stress-header" onclick="stopStress()" disabled style="display: none;">
+                    Stop Stress
+                </button>
                 <button class="btn btn-secondary" onclick="refreshAll()">
                     Refresh
                 </button>
@@ -2292,6 +2298,9 @@
             const indicator = document.getElementById('stress-status-indicator');
             const btnStart = document.getElementById('btn-start-stress');
             const btnStop = document.getElementById('btn-stop-stress');
+            // Header buttons
+            const btnStartHeader = document.getElementById('btn-start-stress-header');
+            const btnStopHeader = document.getElementById('btn-stop-stress-header');
 
             if (isRunning) {
                 if (phase === 'populate') {
@@ -2308,6 +2317,12 @@
                 indicator.className = 'test-status-indicator running';
                 btnStart.disabled = true;
                 btnStop.disabled = false;
+                // Header buttons
+                if (btnStartHeader) {
+                    btnStartHeader.style.display = 'none';
+                    btnStopHeader.style.display = 'inline-flex';
+                    btnStopHeader.disabled = false;
+                }
             } else {
                 dot.style.background = 'var(--text-muted)';
                 dot.style.animation = 'none';
@@ -2315,6 +2330,11 @@
                 indicator.className = 'test-status-indicator stopped';
                 btnStart.disabled = false;
                 btnStop.disabled = true;
+                // Header buttons
+                if (btnStartHeader) {
+                    btnStartHeader.style.display = 'inline-flex';
+                    btnStopHeader.style.display = 'none';
+                }
             }
         }
 
