@@ -43,14 +43,14 @@ echo ""
 
 # Vérifier si les dépendances de test sont installées
 check_dependencies() {
-    echo -e "${YELLOW}Vérification des dépendances...${NC}"
+    echo -e "${YELLOW}Verification des dependances...${NC}"
 
     if ! $PYTHON -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        $PYTHON -m pip install pytest pytest-watch pytest-cov
+        $PYTHON -m pip install pytest pytest-cov --quiet
     fi
 
-    echo -e "${GREEN}Dépendances OK${NC}"
+    echo -e "${GREEN}Dependances OK${NC}"
     echo ""
 }
 
@@ -73,15 +73,27 @@ run_tests() {
 
 # Exécuter les tests en mode watch (continu)
 run_watch() {
-    echo -e "${CYAN}Mode watch activé - Les tests s'exécutent automatiquement à chaque modification${NC}"
-    echo -e "${YELLOW}Appuyez sur Ctrl+C pour arrêter${NC}"
+    echo -e "${CYAN}Mode watch active - Les tests s'executent automatiquement a chaque modification${NC}"
+    echo -e "${YELLOW}Appuyez sur Ctrl+C pour arreter${NC}"
     echo ""
 
-    # pytest-watch surveille les fichiers et relance les tests automatiquement
-    $PYTHON -m pytest_watch -- tests/ \
-        -v \
-        --tb=short \
-        -x
+    # Verifier si pytest-watch est installe
+    if ! $PYTHON -c "import pytest_watch" 2>/dev/null; then
+        echo -e "${YELLOW}Installation de pytest-watch...${NC}"
+        $PYTHON -m pip install pytest-xdist --quiet 2>/dev/null || true
+    fi
+
+    # Utiliser une boucle simple si pytest-watch n'est pas disponible
+    if $PYTHON -c "import pytest_watch" 2>/dev/null; then
+        $PYTHON -m pytest_watch -- tests/ -v --tb=short -x
+    else
+        echo -e "${YELLOW}pytest-watch non disponible, utilisation du mode boucle${NC}"
+        while true; do
+            $PYTHON -m pytest tests/ -v --tb=short -x -m "not bombard"
+            echo -e "${YELLOW}Appuyez sur Entree pour relancer, Ctrl+C pour quitter${NC}"
+            read
+        done
+    fi
 }
 
 # Exécuter avec couverture de code
@@ -162,6 +174,21 @@ run_all() {
         -s
 }
 
+# Exécuter avec logs détaillés (verbose)
+run_verbose() {
+    echo -e "${CYAN}============================================${NC}"
+    echo -e "${CYAN}  MODE VERBOSE - LOGS DETAILLES${NC}"
+    echo -e "${CYAN}============================================${NC}"
+    echo ""
+
+    TEST_VERBOSE=1 $PYTHON -m pytest tests/ \
+        -v \
+        --tb=long \
+        -m "not bombard" \
+        -s \
+        --capture=no
+}
+
 # Afficher l'aide
 show_help() {
     echo "Usage: ./run_tests.sh [OPTION]"
@@ -175,13 +202,18 @@ show_help() {
     echo "  web         Executer uniquement les tests Web/API"
     echo "  bombard     Bombardement / stress tests (centaines de requetes)"
     echo "  all         Tests complets + bombardement"
+    echo "  verbose     Executer avec logs detailles"
     echo "  help        Afficher cette aide"
     echo ""
+    echo "Variables d'environnement:"
+    echo "  TEST_VERBOSE=1    Active les logs detailles"
+    echo ""
     echo "Exemples:"
-    echo "  ./run_tests.sh           # Tous les tests (hors bombardement)"
-    echo "  ./run_tests.sh bombard   # Stress tests uniquement"
-    echo "  ./run_tests.sh all       # Tout: tests + bombardement"
-    echo "  ./run_tests.sh coverage  # Avec couverture"
+    echo "  ./run_tests.sh              # Tous les tests (hors bombardement)"
+    echo "  ./run_tests.sh bombard      # Stress tests uniquement"
+    echo "  ./run_tests.sh all          # Tout: tests + bombardement"
+    echo "  ./run_tests.sh verbose      # Tests avec logs detailles"
+    echo "  TEST_VERBOSE=1 ./run_tests.sh bombard  # Bombardement + logs"
 }
 
 # Main
@@ -208,6 +240,9 @@ case "${1:-}" in
         ;;
     all)
         run_all
+        ;;
+    verbose)
+        run_verbose
         ;;
     help|--help|-h)
         show_help

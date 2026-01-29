@@ -12,6 +12,9 @@ import os
 # Ajouter le chemin du projet pour les imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Charger le plugin de rapport clair
+from tests import conftest_report  # noqa: F401
+
 from llm_attack_lab.core.llm_simulator import LLMSimulator, LLMConfig, SecurityLevel
 from llm_attack_lab.core.attack_engine import AttackEngine, BaseAttack
 from llm_attack_lab.defenses.input_sanitizer import InputSanitizer, ThreatLevel
