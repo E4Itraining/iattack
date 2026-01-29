@@ -3,7 +3,7 @@ Attack Engine - Moteur d'execution des attaques
 """
 
 import time
-from typing import Dict, List, Optional, Callable
+from typing import Dict, List, Optional, Callable, Any
 from dataclasses import dataclass, field
 from enum import Enum
 from abc import ABC, abstractmethod
@@ -17,10 +17,55 @@ from rich.table import Table
 from llm_attack_lab.monitoring.metrics import get_metrics_collector
 from llm_attack_lab.monitoring.logger import get_logger
 
+# Import OTelManager for Prometheus export
+try:
+    from llm_attack_lab.monitoring.otel import get_otel_manager, init_telemetry
+    OTEL_AVAILABLE = True
+except ImportError:
+    OTEL_AVAILABLE = False
+    get_otel_manager = None
+    init_telemetry = None
+
+# Import SecurityMetricsCollector for advanced security metrics
+try:
+    from llm_attack_lab.monitoring.security_metrics import get_security_metrics
+    SECURITY_METRICS_AVAILABLE = True
+except ImportError:
+    SECURITY_METRICS_AVAILABLE = False
+    get_security_metrics = None
+
 
 console = Console()
 metrics = get_metrics_collector()
 logger = get_logger("attack_engine")
+
+# Initialize OTel for Prometheus export
+_otel_manager: Optional[Any] = None
+_security_metrics: Optional[Any] = None
+
+
+def _get_otel_manager():
+    """Get or initialize OTel manager for metrics export"""
+    global _otel_manager
+    if _otel_manager is None and OTEL_AVAILABLE:
+        try:
+            _otel_manager = init_telemetry()
+            logger.debug("OTel manager initialized for attack engine")
+        except Exception as e:
+            logger.warning(f"Could not initialize OTel manager: {e}")
+    return _otel_manager
+
+
+def _get_security_metrics_collector():
+    """Get or initialize security metrics collector"""
+    global _security_metrics
+    if _security_metrics is None and SECURITY_METRICS_AVAILABLE:
+        try:
+            _security_metrics = get_security_metrics()
+            logger.debug("Security metrics collector initialized for attack engine")
+        except Exception as e:
+            logger.warning(f"Could not initialize security metrics: {e}")
+    return _security_metrics
 
 
 class AttackPhase(Enum):
@@ -137,13 +182,47 @@ class AttackEngine:
             results.append(result)
             self.results.append(result)
 
-            # Record metrics
+            # Record metrics (internal collector)
             self.metrics.record_attack(
                 attack_type=attack_type,
                 success=result.success,
                 detected=result.detection_status == "detected",
                 duration=execution_time
             )
+
+            # Record metrics to Prometheus via OTelManager
+            otel = _get_otel_manager()
+            if otel:
+                otel.record_attack(
+                    attack_type=attack_type,
+                    success=result.success,
+                    detected=result.detection_status == "detected",
+                    duration=execution_time
+                )
+
+            # Record security metrics for advanced monitoring
+            sec_metrics = _get_security_metrics_collector()
+            if sec_metrics:
+                # Record prompt injection score based on detection
+                injection_score = 0.9 if result.detection_status == "detected" else 0.3
+                sec_metrics.record_prompt_injection_score(
+                    score=injection_score,
+                    model_name="llm-simulator",
+                    detection_method="rule_based"
+                )
+                # Record API query for rate limiting tracking
+                sec_metrics.record_api_query(
+                    user_id="attack_engine",
+                    ip_address="local",
+                    endpoint=f"/attack/{attack_type}"
+                )
+                # Record security alert if attack was detected
+                if result.detection_status == "detected":
+                    sec_metrics.record_security_alert(
+                        alert_type=attack_type,
+                        severity="high" if result.success else "medium",
+                        pattern="llm"
+                    )
 
             # Log attack result
             self.logger.log_attack_result(
