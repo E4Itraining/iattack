@@ -493,6 +493,12 @@ class StressRunner:
         Record comprehensive security metrics for all Grafana dashboards.
 
         This generates metrics for both main and ml-security-metrics dashboards.
+        Metrics are organized by attack type:
+        - prompt_injection
+        - jailbreak
+        - data_poisoning
+        - model_extraction
+        - membership_inference
         """
         if not self._security_metrics:
             return
@@ -500,6 +506,41 @@ class StressRunner:
         attacks_detected = metadata.get("attacks_detected", [])
         is_attack = len(attacks_detected) > 0
         is_compromised = metadata.get("compromised", False)
+
+        # Map detected attack types to dashboard categories
+        attack_type_map = {
+            "prompt_injection": "prompt_injection",
+            "injection": "prompt_injection",
+            "jailbreak": "jailbreak",
+            "bypass": "jailbreak",
+            "data_poisoning": "data_poisoning",
+            "poisoning": "data_poisoning",
+            "model_extraction": "model_extraction",
+            "extraction": "model_extraction",
+            "membership_inference": "membership_inference",
+            "inference": "membership_inference"
+        }
+
+        # Determine the main attack type for this request
+        detected_attack_type = None
+        for attack in attacks_detected:
+            raw_type = attack.get("type", "unknown").lower()
+            for key, mapped_type in attack_type_map.items():
+                if key in raw_type:
+                    detected_attack_type = mapped_type
+                    break
+            if detected_attack_type:
+                break
+
+        # If no specific type detected, simulate based on payload patterns
+        if is_attack and not detected_attack_type:
+            payload_lower = payload.lower()
+            if any(p in payload_lower for p in ["ignore", "forget", "override", "system"]):
+                detected_attack_type = "prompt_injection"
+            elif any(p in payload_lower for p in ["dan", "jailbreak", "no rules", "no restrictions"]):
+                detected_attack_type = "jailbreak"
+            else:
+                detected_attack_type = random.choice(["prompt_injection", "jailbreak"])
 
         # ===== ADVERSARIAL PATTERN METRICS =====
 
@@ -597,12 +638,25 @@ class StressRunner:
                     model_name="llm-simulator",
                     detection_method="rule_based"
                 )
-                # Security alert
+
+            # Security alert with proper attack type
+            if detected_attack_type:
                 self._security_metrics.record_security_alert(
-                    alert_type=attack.get("type", "unknown"),
+                    alert_type=detected_attack_type,
                     severity="critical" if is_compromised else "warning",
-                    pattern="llm"
+                    pattern="llm" if detected_attack_type in ["prompt_injection", "jailbreak"] else "behavior"
                 )
+
+            # Simulate additional attack types for data variety
+            if random.random() < 0.1:  # 10% chance of additional alerts
+                additional_types = ["data_poisoning", "model_extraction", "membership_inference"]
+                for add_type in additional_types:
+                    if random.random() < 0.3:  # 30% chance for each
+                        self._security_metrics.record_security_alert(
+                            alert_type=add_type,
+                            severity=random.choice(["warning", "critical"]),
+                            pattern="behavior" if add_type in ["data_poisoning", "model_extraction"] else "adversarial"
+                        )
         else:
             # Low score for clean requests
             self._security_metrics.record_prompt_injection_score(
