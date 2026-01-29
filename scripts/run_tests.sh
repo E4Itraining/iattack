@@ -45,9 +45,29 @@ echo ""
 check_dependencies() {
     echo -e "${YELLOW}Verification des dependances...${NC}"
 
+    # Vérifier les dépendances principales du projet
+    if ! $PYTHON -c "import rich" 2>/dev/null || ! $PYTHON -c "import flask" 2>/dev/null; then
+        echo -e "${YELLOW}Installation des dependances du projet...${NC}"
+        if [ -f "$PROJECT_DIR/requirements.txt" ]; then
+            $PYTHON -m pip install -r "$PROJECT_DIR/requirements.txt" --quiet 2>/dev/null || \
+            $PYTHON -m pip install flask rich click numpy colorama pyyaml jinja2 websockets pytest pytest-cov prometheus-client --quiet --ignore-installed 2>/dev/null || true
+        else
+            $PYTHON -m pip install flask rich click numpy colorama pyyaml jinja2 websockets pytest pytest-cov prometheus-client --quiet 2>/dev/null || true
+        fi
+    fi
+
+    # Vérifier pytest spécifiquement
     if ! $PYTHON -c "import pytest" 2>/dev/null; then
         echo -e "${YELLOW}Installation de pytest...${NC}"
-        $PYTHON -m pip install pytest pytest-cov --quiet
+        $PYTHON -m pip install pytest pytest-cov --quiet 2>/dev/null || \
+        $PYTHON -m pip install pytest pytest-cov --quiet --ignore-installed 2>/dev/null || true
+    fi
+
+    # Vérification finale
+    if ! $PYTHON -c "import pytest; import rich; import flask" 2>/dev/null; then
+        echo -e "${RED}Erreur: Impossible d'installer les dependances.${NC}"
+        echo -e "${YELLOW}Essayez manuellement: pip install -r requirements.txt${NC}"
+        exit 1
     fi
 
     echo -e "${GREEN}Dependances OK${NC}"
