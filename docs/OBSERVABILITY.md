@@ -76,7 +76,10 @@ curl -s "http://localhost:8428/api/v1/query?query=up"
 1. Ouvrir Grafana: http://localhost:3000
 2. Se connecter avec `admin` / `llmattacklab`
 3. Aller dans **Dashboards** > **Browse**
-4. Selectionner **LLM Attack Lab** ou **ML/LLM Security Metrics**
+4. Selectionner un dashboard:
+   - **LLM Attack Lab** - Vue operationnelle
+   - **ML/LLM Security Metrics** - Detection de securite
+   - **Documentation** - Documentation integree
 
 ---
 
@@ -280,6 +283,30 @@ Table montrant l'etat en temps reel de chaque type de detection:
 | Drift | `ml_prediction_distribution_psi` | Active/Inactive |
 | Injection | `llm_prompt_injection_score` | Active/Inactive |
 | Jailbreak | `llm_output_policy_violations_total` | Active/Inactive |
+
+---
+
+### Dashboard 3: Documentation
+
+**URL**: http://localhost:3000/d/llm-attack-lab-docs
+
+**Refresh**: Aucun (contenu statique)
+
+Ce dashboard integre toute la documentation du projet directement dans Grafana:
+
+| Section | Contenu |
+|---------|---------|
+| README Principal | Presentation du projet, types d'attaques, installation |
+| Quick Start | Guide de demarrage rapide |
+| Capacites et Stack | Detection capabilities, stack technologique |
+| Architecture | Diagramme d'architecture et flux de donnees |
+| Catalogue des Metriques | Matrice de couverture, metriques adversarial/comportementales/LLM |
+| Alerting | Alertes critiques et warning avec actions recommandees |
+| Troubleshooting | Problemes courants et commandes de diagnostic |
+| Best Practices | Recommandations cyber/observabilite |
+| Configuration Avancee | Variables d'environnement, personnalisation des seuils |
+| Requetes PromQL | Exemples de requetes utiles |
+| References | Liens vers OWASP, MITRE ATLAS, documentation |
 
 ---
 

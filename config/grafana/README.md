@@ -276,6 +276,23 @@ sum by (is_dangerous) (increase(llm_tool_calls_total[1h]))
 
 Dashboard operationnel principal avec vue d'ensemble des attaques et defenses.
 
+### Dashboard 3: Documentation
+**UID**: `llm-attack-lab-docs`
+**Fichier**: `dashboards/documentation.json`
+**URL**: http://localhost:3000/d/llm-attack-lab-docs
+
+Dashboard integrant toute la documentation du projet directement dans Grafana:
+- README principal du projet
+- Guide de demarrage rapide (Quick Start)
+- Architecture et stack technologique
+- Catalogue complet des metriques de securite
+- Matrice de couverture attaques/metriques
+- Regles d'alerting (critiques et warning)
+- Guide de troubleshooting
+- Best practices cyber/observabilite
+- Exemples de requetes PromQL
+- References et liens utiles
+
 ---
 
 ## Regles d'Alerting
@@ -405,7 +422,8 @@ config/grafana/
 ├── README.md                          # Ce fichier
 ├── dashboards/
 │   ├── llm-attack-lab.json           # Dashboard operationnel
-│   └── ml-security-metrics.json      # Dashboard securite ML/LLM
+│   ├── ml-security-metrics.json      # Dashboard securite ML/LLM
+│   └── documentation.json            # Documentation integree
 └── provisioning/
     ├── dashboards/
     │   └── dashboards.yaml           # Configuration auto-chargement
