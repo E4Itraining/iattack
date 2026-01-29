@@ -1200,6 +1200,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- Continuous Stress Runner -->
+        <div class="card fade-in test-runner-section" style="margin-top: 1.5rem;">
+            <div class="card-header">
+                <span class="card-title">Continuous Stress Testing</span>
+                <div class="test-status-indicator" id="stress-status-indicator">
+                    <span class="status-dot" id="stress-status-dot"></span>
+                    <span id="stress-status-text">Idle</span>
+                    <span id="stress-stream-status" class="stream-disconnected"></span>
+                </div>
+            </div>
+
+            <div class="test-controls">
+                <button class="btn btn-primary" id="btn-start-stress" onclick="startStress()" style="background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);">
+                    Start Stress
+                </button>
+                <button class="btn btn-danger" id="btn-stop-stress" onclick="stopStress()" disabled>
+                    Stop
+                </button>
+            </div>
+
+            <div class="test-controls" style="margin-top: 0.5rem; flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Populate:</label>
+                    <input type="number" class="form-input" id="stress-populate" value="100" min="10" max="1000" style="width: 80px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Batch:</label>
+                    <input type="number" class="form-input" id="stress-batch" value="10" min="1" max="100" style="width: 70px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Delay (s):</label>
+                    <input type="number" class="form-input" id="stress-delay" value="0.1" min="0" max="5" step="0.1" style="width: 70px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Workers:</label>
+                    <input type="number" class="form-input" id="stress-workers" value="5" min="1" max="20" style="width: 60px;">
+                </div>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <label class="form-label" style="margin: 0;">Attack %:</label>
+                    <input type="number" class="form-input" id="stress-attack-ratio" value="70" min="0" max="100" style="width: 60px;">
+                </div>
+            </div>
+
+            <div class="test-summary" style="margin-top: 1rem;">
+                <div class="test-summary-item">
+                    <div class="test-summary-value total" id="stress-total">0</div>
+                    <div class="test-summary-label">Total Requests</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value passed" id="stress-success">0</div>
+                    <div class="test-summary-label">Successful</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value failed" id="stress-compromised">0</div>
+                    <div class="test-summary-label">Compromised</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value skipped" id="stress-detected">0</div>
+                    <div class="test-summary-label">Detected</div>
+                </div>
+                <div class="test-summary-item">
+                    <div class="test-summary-value duration" id="stress-rps">0</div>
+                    <div class="test-summary-label">Req/sec</div>
+                </div>
+            </div>
+
+            <div class="test-results-stream" id="stress-results-stream" style="max-height: 300px;">
+                <div style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                    Click "Start Stress" to begin continuous stress testing...<br>
+                    <small>Phase 1: Populate (initial data) -> Phase 2: Continuous bombardment</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -2065,7 +2139,236 @@
                     }
                 })
                 .catch(e => console.log('Test status check failed:', e));
+
+            // Check stress status on load
+            fetch('/api/stress/status')
+                .then(res => res.json())
+                .then(status => {
+                    if (status.is_running) {
+                        connectStressStream().then(() => {
+                            updateStressStatusUI(true, status.phase);
+                        }).catch(e => console.log('Stress stream connection failed:', e));
+                    }
+                })
+                .catch(e => console.log('Stress status check failed:', e));
         });
+
+        // ============================================================================
+        // Continuous Stress Testing Functionality
+        // ============================================================================
+
+        let stressEventSource = null;
+        let stressStats = {
+            total_requests: 0,
+            successful_requests: 0,
+            compromised_count: 0,
+            detected_count: 0,
+            requests_per_second: 0,
+            phase: 'idle'
+        };
+
+        // Connect to stress event stream
+        function connectStressStream() {
+            return new Promise((resolve, reject) => {
+                if (stressEventSource) {
+                    stressEventSource.close();
+                }
+
+                stressEventSource = new EventSource('/api/stress/stream');
+                let connectionTimeout = setTimeout(() => {
+                    reject(new Error('Connection timeout'));
+                }, 5000);
+
+                stressEventSource.onopen = function() {
+                    clearTimeout(connectionTimeout);
+                    document.getElementById('stress-stream-status').className = 'stream-connected';
+                    document.getElementById('stress-stream-status').title = 'Stream connected';
+                    console.log('Stress SSE stream connected');
+                    resolve();
+                };
+
+                stressEventSource.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleStressEvent(data);
+                    } catch (e) {
+                        console.error('Failed to parse stress event:', e);
+                    }
+                };
+
+                stressEventSource.onerror = function() {
+                    clearTimeout(connectionTimeout);
+                    document.getElementById('stress-stream-status').className = 'stream-disconnected';
+                    document.getElementById('stress-stream-status').title = 'Stream disconnected';
+                    setTimeout(() => {
+                        if (stressEventSource && stressEventSource.readyState === EventSource.CLOSED) {
+                            connectStressStream().catch(e => console.log('Stress reconnect failed:', e));
+                        }
+                    }, 5000);
+                };
+            });
+        }
+
+        // Handle stress events
+        function handleStressEvent(event) {
+            const streamContainer = document.getElementById('stress-results-stream');
+
+            switch (event.type) {
+                case 'phase_start':
+                    if (event.data.phase === 'populate') {
+                        streamContainer.innerHTML = `<div style="color: var(--accent-cyan);">Phase 1: Populating with ${event.data.target_count} initial requests...</div>`;
+                    } else if (event.data.phase === 'stress') {
+                        streamContainer.innerHTML += `<div style="color: var(--accent-red); margin-top: 0.5rem;">Phase 2: Starting continuous bombardment (batch=${event.data.batch_size}, delay=${event.data.delay}s)...</div>`;
+                    }
+                    updateStressStatusUI(true, event.data.phase);
+                    break;
+
+                case 'phase_end':
+                    if (event.data.phase === 'populate') {
+                        streamContainer.innerHTML += `<div style="color: var(--accent-green);">Populate complete: ${event.data.stats.total_requests} requests sent</div>`;
+                    }
+                    break;
+
+                case 'attack_result':
+                    addStressResultToStream(event.data);
+                    break;
+
+                case 'stats_update':
+                    stressStats = event.data;
+                    updateStressSummaryUI();
+                    break;
+
+                case 'error':
+                    streamContainer.innerHTML += `<div style="color: var(--accent-red);">Error: ${event.data.error}</div>`;
+                    break;
+
+                case 'stopped':
+                    stressStats = event.data.stats;
+                    updateStressSummaryUI();
+                    streamContainer.innerHTML += `<div style="color: var(--accent-yellow); margin-top: 1rem; font-weight: bold;">Stress test stopped - Total: ${stressStats.total_requests} requests, ${stressStats.compromised_count} compromised</div>`;
+                    updateStressStatusUI(false, 'idle');
+                    break;
+            }
+
+            streamContainer.scrollTop = streamContainer.scrollHeight;
+        }
+
+        // Add stress result to stream
+        function addStressResultToStream(result) {
+            const streamContainer = document.getElementById('stress-results-stream');
+
+            const statusColor = result.compromised ? 'var(--accent-red)' : (result.detected ? 'var(--accent-yellow)' : 'var(--accent-green)');
+            const statusText = result.compromised ? 'COMPROMISED' : (result.detected ? 'DETECTED' : 'SAFE');
+
+            const item = document.createElement('div');
+            item.className = 'test-result-item';
+            item.innerHTML = `
+                <div class="test-result-icon" style="background: ${statusColor}20; color: ${statusColor};">${statusText.charAt(0)}</div>
+                <span class="test-result-name" style="font-size: 0.75rem;">${escapeHtml(result.payload_preview)}</span>
+                <span class="test-result-duration">${result.security_level} - ${(result.duration * 1000).toFixed(0)}ms</span>
+            `;
+
+            streamContainer.appendChild(item);
+
+            // Keep only last 100 items
+            while (streamContainer.children.length > 100) {
+                streamContainer.removeChild(streamContainer.firstChild);
+            }
+        }
+
+        // Update stress summary UI
+        function updateStressSummaryUI() {
+            document.getElementById('stress-total').textContent = stressStats.total_requests || 0;
+            document.getElementById('stress-success').textContent = stressStats.successful_requests || 0;
+            document.getElementById('stress-compromised').textContent = stressStats.compromised_count || 0;
+            document.getElementById('stress-detected').textContent = stressStats.detected_count || 0;
+            document.getElementById('stress-rps').textContent = (stressStats.requests_per_second || 0).toFixed(1);
+        }
+
+        // Update stress status UI
+        function updateStressStatusUI(isRunning, phase) {
+            const dot = document.getElementById('stress-status-dot');
+            const text = document.getElementById('stress-status-text');
+            const indicator = document.getElementById('stress-status-indicator');
+            const btnStart = document.getElementById('btn-start-stress');
+            const btnStop = document.getElementById('btn-stop-stress');
+
+            if (isRunning) {
+                if (phase === 'populate') {
+                    dot.style.background = 'var(--accent-cyan)';
+                    text.textContent = 'Populating...';
+                } else if (phase === 'stress') {
+                    dot.style.background = 'var(--accent-red)';
+                    text.textContent = 'Stressing...';
+                } else {
+                    dot.style.background = 'var(--accent-yellow)';
+                    text.textContent = 'Running...';
+                }
+                dot.style.animation = 'pulse 1s infinite';
+                indicator.className = 'test-status-indicator running';
+                btnStart.disabled = true;
+                btnStop.disabled = false;
+            } else {
+                dot.style.background = 'var(--text-muted)';
+                dot.style.animation = 'none';
+                text.textContent = 'Idle';
+                indicator.className = 'test-status-indicator stopped';
+                btnStart.disabled = false;
+                btnStop.disabled = true;
+            }
+        }
+
+        // Start stress testing
+        async function startStress() {
+            try {
+                await connectStressStream();
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                const config = {
+                    populate_count: parseInt(document.getElementById('stress-populate').value) || 100,
+                    stress_batch_size: parseInt(document.getElementById('stress-batch').value) || 10,
+                    stress_delay: parseFloat(document.getElementById('stress-delay').value) || 0.1,
+                    workers: parseInt(document.getElementById('stress-workers').value) || 5,
+                    attack_ratio: (parseInt(document.getElementById('stress-attack-ratio').value) || 70) / 100
+                };
+
+                // Reset stats
+                stressStats = {
+                    total_requests: 0,
+                    successful_requests: 0,
+                    compromised_count: 0,
+                    detected_count: 0,
+                    requests_per_second: 0,
+                    phase: 'idle'
+                };
+                updateStressSummaryUI();
+
+                const response = await fetch('/api/stress/start', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+
+                const result = await response.json();
+                if (result.status === 'already_running') {
+                    alert('Stress test is already running');
+                } else {
+                    updateStressStatusUI(true, 'populate');
+                }
+            } catch (e) {
+                console.error('Failed to start stress test:', e);
+                alert('Failed to start stress test: ' + e.message);
+            }
+        }
+
+        // Stop stress testing
+        async function stopStress() {
+            try {
+                await fetch('/api/stress/stop', { method: 'POST' });
+            } catch (e) {
+                console.error('Failed to stop stress test:', e);
+            }
+        }
     </script>
 </body>
 </html>

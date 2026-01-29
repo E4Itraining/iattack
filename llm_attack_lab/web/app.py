@@ -16,6 +16,7 @@ from llm_attack_lab.attacks import ATTACK_REGISTRY
 from llm_attack_lab.monitoring.metrics import get_metrics_collector
 from llm_attack_lab.monitoring.logger import get_logger
 from llm_attack_lab.testing import get_test_runner, stream_test_events
+from llm_attack_lab.testing import get_stress_runner, stream_stress_events
 
 # OpenTelemetry integration
 try:
@@ -397,6 +398,60 @@ def stop_tests():
 def test_status():
     """Get current test runner status"""
     runner = get_test_runner()
+    return jsonify(runner.get_status())
+
+
+# ============================================================================
+# Continuous Stress Testing Endpoints
+# ============================================================================
+
+@app.route('/api/stress/stream')
+def stream_stress():
+    """Server-Sent Events endpoint for streaming stress test events"""
+    def generate():
+        for event in stream_stress_events():
+            yield event
+
+    return Response(
+        generate(),
+        mimetype='text/event-stream',
+        headers={
+            'Cache-Control': 'no-cache',
+            'Connection': 'keep-alive',
+            'X-Accel-Buffering': 'no',
+        }
+    )
+
+
+@app.route('/api/stress/start', methods=['POST'])
+def start_stress():
+    """Start continuous stress testing
+
+    JSON body options:
+        populate_count: Number of initial population requests (default 100)
+        stress_batch_size: Requests per stress batch (default 10)
+        stress_delay: Delay between batches in seconds (default 0.1)
+        workers: Number of concurrent workers (default 5)
+        attack_ratio: Ratio of attacks vs safe requests (default 0.7)
+    """
+    data = request.get_json() or {}
+    runner = get_stress_runner()
+    result = runner.start(config=data)
+    return jsonify(result)
+
+
+@app.route('/api/stress/stop', methods=['POST'])
+def stop_stress():
+    """Stop continuous stress testing"""
+    runner = get_stress_runner()
+    result = runner.stop()
+    return jsonify(result)
+
+
+@app.route('/api/stress/status')
+def stress_status():
+    """Get current stress runner status"""
+    runner = get_stress_runner()
     return jsonify(runner.get_status())
 
 
