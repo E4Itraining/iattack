@@ -109,8 +109,11 @@ def strict_sanitizer():
 @pytest.fixture
 def flask_app():
     """Application Flask pour les tests"""
-    from llm_attack_lab.web.app import app
+    from llm_attack_lab.web.app import app, simulator, metrics
     app.config['TESTING'] = True
+    # Reset simulator and metrics state before each test
+    simulator.reset()
+    metrics.reset()
     return app
 
 
