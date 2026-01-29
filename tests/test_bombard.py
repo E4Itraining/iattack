@@ -16,6 +16,7 @@ Utilisation:
   ./scripts/run_tests.sh bombard                       # via le script
 """
 
+import os
 import pytest
 import json
 import time
@@ -478,9 +479,12 @@ class TestBombardHTTP:
     Utilisez: python -m llm_attack_lab.web.app
 
     Ces tests sont marques 'http' en plus de 'bombard' pour les distinguer.
+
+    Configuration via variable d'environnement:
+    - TEST_SERVER_URL: URL du serveur (defaut: http://localhost:8081)
     """
 
-    BASE_URL = "http://localhost:8081"
+    BASE_URL = os.environ.get("TEST_SERVER_URL", "http://localhost:8081")
 
     @pytest.fixture(autouse=True)
     def check_server(self):
