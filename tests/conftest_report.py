@@ -42,6 +42,35 @@ MODULE_LABELS = {
     "test_bombard": "BOMBARDEMENT / STRESS",
 }
 
+# -- Mapping Attaques <-> Monitoring ---------------------------------------
+ATTACK_MONITORING_MAP = {
+    "prompt_injection": {
+        "defense": "InputSanitizer",
+        "metrics": ["threats_detected", "blocked_count"],
+        "log_level": "WARNING",
+    },
+    "jailbreak": {
+        "defense": "JailbreakDetector",
+        "metrics": ["jailbreak_attempts", "role_hijack_count"],
+        "log_level": "WARNING",
+    },
+    "data_poisoning": {
+        "defense": "DataValidator",
+        "metrics": ["poisoned_inputs", "anomaly_score"],
+        "log_level": "ERROR",
+    },
+    "model_extraction": {
+        "defense": "RateLimiter",
+        "metrics": ["extraction_attempts", "rate_limit_hits"],
+        "log_level": "CRITICAL",
+    },
+    "membership_inference": {
+        "defense": "PrivacyGuard",
+        "metrics": ["inference_attempts", "privacy_leaks"],
+        "log_level": "ERROR",
+    },
+}
+
 
 def _module_key(nodeid: str) -> str:
     """Extrait le nom du module depuis le nodeid."""
@@ -117,6 +146,8 @@ class ClearReportPlugin:
         self.module_stats = {}
         self._test_index = 0
         self._total_tests = 0
+        # Mode verbose via variable d'environnement
+        self._verbose = os.environ.get("TEST_VERBOSE", "").lower() in ("1", "true", "yes")
         # Dupliquer le fd stderr pour un acces stable meme si
         # sys.stderr est remplace par un test ou un plugin
         self._fd = os.dup(2)
@@ -170,6 +201,16 @@ class ClearReportPlugin:
         self._out(f"{CYAN}{'=' * 60}{RESET}")
         self._out(f"{DIM}  {self._total_tests} tests a executer{RESET}")
         self._out(f"{CYAN}{'=' * 60}{RESET}")
+
+        # Afficher la matrice Attaques <-> Monitoring
+        self._out()
+        self._out(f"{BOLD}{YELLOW}  MATRICE ATTAQUES / DEFENSES{RESET}")
+        self._out(f"{DIM}  {'─' * 56}{RESET}")
+        for attack, info in ATTACK_MONITORING_MAP.items():
+            defense = info["defense"]
+            metrics = ", ".join(info["metrics"][:2])
+            self._out(f"{DIM}  {attack:<22} -> {defense:<18} [{metrics}]{RESET}")
+        self._out(f"{DIM}  {'─' * 56}{RESET}")
 
         try:
             for i, item in enumerate(session.items):
@@ -263,7 +304,24 @@ class ClearReportPlugin:
 
             duration = f"{report.duration:.3f}s" if report.duration else ""
             progress = f"[{self._test_index}/{self._total_tests}]"
-            self._out(f"    {icon}  {test_name}  {DIM}{duration}  {progress}{RESET}")
+
+            # Afficher informations contextuelles pour les tests d'attaque
+            attack_info = ""
+            for attack_key in ATTACK_MONITORING_MAP:
+                if attack_key.replace("_", "") in test_name.lower().replace("_", ""):
+                    info = ATTACK_MONITORING_MAP[attack_key]
+                    attack_info = f" {DIM}({info['defense']}){RESET}"
+                    break
+
+            self._out(f"    {icon}  {test_name}{attack_info}  {DIM}{duration}  {progress}{RESET}")
+
+            # En mode verbose, afficher des details supplementaires
+            if self._verbose and report.passed:
+                # Extraire les infos du test si disponibles
+                if hasattr(report, 'capstdout') and report.capstdout:
+                    for line in report.capstdout.strip().split('\n')[:3]:
+                        if line.strip():
+                            self._out(f"         {DIM}{line.strip()}{RESET}")
 
             # Si echec, afficher le detail
             if report.failed and report.longreprtext:
@@ -289,15 +347,20 @@ class ClearReportPlugin:
         self._out(f"{'=' * 60}")
         self._out()
 
-        # Stats par module
+        # Stats par module avec barre de progression visuelle
         for mod, stats in self.module_stats.items():
             label = MODULE_LABELS.get(mod, mod)
             p = stats["passed"]
             f = stats["failed"]
             s = stats["skipped"]
             mod_total = p + f + s
+            if mod_total > 0:
+                pct = int((p / mod_total) * 20)
+                bar = f"{GREEN}{'█' * pct}{RESET}{DIM}{'░' * (20 - pct)}{RESET}"
+            else:
+                bar = f"{DIM}{'░' * 20}{RESET}"
             status_color = GREEN if f == 0 else RED
-            self._out(f"  {status_color}{label:.<40} {p}/{mod_total} OK{RESET}")
+            self._out(f"  {status_color}{label:<24}{RESET} {bar} {p}/{mod_total}")
 
         self._out()
         self._out(f"  {BOLD}Total: {total} tests{RESET}")
@@ -318,6 +381,21 @@ class ClearReportPlugin:
             for status, nodeid in self.results:
                 if status == "failed":
                     self._out(f"    {RED}- {nodeid}{RESET}")
+
+        # Résumé des types d'attaques testés
+        attacks_tested = set()
+        for _, nodeid in self.results:
+            for attack_key in ATTACK_MONITORING_MAP:
+                if attack_key.replace("_", "") in nodeid.lower().replace("_", ""):
+                    attacks_tested.add(attack_key)
+                    break
+
+        if attacks_tested:
+            self._out()
+            self._out(f"  {BOLD}{YELLOW}Types d'attaques couverts:{RESET}")
+            for attack in sorted(attacks_tested):
+                info = ATTACK_MONITORING_MAP[attack]
+                self._out(f"    {CYAN}●{RESET} {attack} -> {info['defense']}")
 
         self._out()
 
