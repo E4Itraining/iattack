@@ -69,6 +69,7 @@ Le lab inclut une infrastructure complete d'observabilite pour detecter et visua
 
 1. **LLM Attack Lab** (`/d/llm-attack-lab-main`) - Vue operationnelle
 2. **ML/LLM Security Metrics** (`/d/ml-security-metrics`) - Detection de securite
+3. **Documentation** (`/d/llm-attack-lab-docs`) - Documentation integree dans Grafana
 
 ### Lancer le stack complet
 

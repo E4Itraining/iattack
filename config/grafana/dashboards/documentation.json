@@ -1,0 +1,496 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
+      "title": "LLM Attack Lab",
+      "tooltip": "Dashboard operationnel",
+      "type": "link",
+      "url": "/d/llm-attack-lab-main"
+    },
+    {
+      "asDropdown": false,
+      "icon": "dashboard",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Security Metrics",
+      "tooltip": "Dashboard securite ML/LLM",
+      "type": "link",
+      "url": "/d/ml-security-metrics"
+    }
+  ],
+  "liveNow": false,
+  "panels": [
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "panels": [],
+      "title": "LLM Attack Simulation Lab",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 24,
+        "x": 0,
+        "y": 1
+      },
+      "id": 2,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "# LLM Attack Simulation Lab\n\nUn laboratoire interactif pour comprendre et simuler les attaques sur les Large Language Models (LLMs).\n\n## Objectif\n\nCe lab permet de:\n- **Comprendre** les vulnerabilites des LLMs\n- **Simuler** differents types d'attaques en environnement controle\n- **Apprendre** les mecanismes de defense\n\n## Types d'attaques simulees\n\n| Attaque | Description | Risque |\n|---------|-------------|--------|\n| **Prompt Injection** | Manipulation des instructions du LLM | Critique |\n| **Data Poisoning** | Corruption des donnees d'entrainement | Eleve |\n| **Jailbreak** | Contournement des guardrails | Critique |\n| **Model Extraction** | Vol de propriete intellectuelle | Eleve |\n| **Membership Inference** | Detection de donnees d'entrainement | Moyen |\n\n## Installation\n\n```bash\n# Cloner le repository\ngit clone <repo-url>\ncd iattack\n\n# Installer les dependances\npip install -r requirements.txt\n\n# Lancer le lab\npython -m llm_attack_lab\n```\n\n## Utilisation\n\n### Mode CLI Interactif\n```bash\npython -m llm_attack_lab --interactive\n```\n\n### Mode Dashboard Web\n```bash\npython -m llm_attack_lab --web\n# Ouvrir http://localhost:8081\n```\n\n### Executer une simulation specifique\n```bash\npython -m llm_attack_lab --attack prompt_injection\npython -m llm_attack_lab --attack data_poisoning\npython -m llm_attack_lab --attack jailbreak\n```\n\n## Stack de Monitoring\n\n| Composant | Role | URL |\n|-----------|------|-----|\n| **Grafana** | Dashboards de visualisation | http://localhost:3000 |\n| **VictoriaMetrics** | Base de donnees time series | http://localhost:8428 |\n| **OpenTelemetry** | Pipeline de telemetrie | - |\n\n### Dashboards disponibles\n\n1. **LLM Attack Lab** (`/d/llm-attack-lab-main`) - Vue operationnelle\n2. **ML/LLM Security Metrics** (`/d/ml-security-metrics`) - Detection de securite\n\n### Lancer le stack complet\n\n```bash\ndocker-compose up -d\n# Grafana: admin / llmattacklab\n```\n\n## Structure du Projet\n\n```\nllm_attack_lab/\n├── __main__.py           # Point d'entree\n├── core/\n│   ├── llm_simulator.py  # Simulateur de LLM\n│   └── attack_engine.py  # Moteur d'attaques\n├── attacks/\n│   ├── prompt_injection.py\n│   ├── data_poisoning.py\n│   ├── jailbreak.py\n│   └── model_extraction.py\n├── defenses/\n│   ├── input_sanitizer.py\n│   └── output_filter.py\n├── web/\n│   ├── app.py\n│   └── templates/\n├── monitoring/           # Module d'observabilite\n│   ├── metrics.py        # Collecteur de metriques\n│   ├── security_metrics.py\n│   ├── otel.py           # Integration OpenTelemetry\n│   └── alerts.py         # Systeme d'alertes\n└── utils/\n    └── logger.py\n\nconfig/\n├── grafana/\n│   └── dashboards/       # Dashboards Grafana\n├── prometheus/\n│   └── rules/            # Regles d'alerte\n├── otel-collector-config.yaml\n└── vmagent.yaml\n```\n\n## Avertissement\n\nCe laboratoire est destine a des fins **educatives uniquement**.\nL'utilisation de ces techniques sur des systemes sans autorisation est illegale.",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "README Principal",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 3,
+      "panels": [],
+      "title": "Guide d'Observabilite",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 22
+      },
+      "id": 4,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Quick Start\n\n### 1. Lancer le stack complet\n\n```bash\n# Demarrer tous les services d'observabilite\ndocker-compose up -d\n\n# Verifier que tous les services sont up\ndocker-compose ps\n```\n\n### 2. Acceder aux interfaces\n\n| Service | URL | Credentials |\n|---------|-----|-------------|\n| **Grafana** | http://localhost:3000 | `admin` / `llmattacklab` |\n| **VictoriaMetrics** | http://localhost:8428 | - |\n| **Application** | http://localhost:8081 | - |\n| **Metrics (Prometheus)** | http://localhost:8000/metrics | - |\n\n### 3. Verifier la collecte de metriques\n\n```bash\n# Verifier que les metriques sont collectees\ncurl -s http://localhost:8000/metrics | grep llm_\n\n# Verifier VictoriaMetrics\ncurl -s \"http://localhost:8428/api/v1/query?query=up\"\n```\n\n### 4. Acceder aux dashboards\n\n1. Ouvrir Grafana: http://localhost:3000\n2. Se connecter avec `admin` / `llmattacklab`\n3. Aller dans **Dashboards** > **Browse**\n4. Selectionner **LLM Attack Lab** ou **ML/LLM Security Metrics**",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Quick Start",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 22
+      },
+      "id": 5,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Capacites de Detection\n\n| Type d'Attaque | Detection | Temps | Metriques Cles |\n|----------------|-----------|-------|----------------|\n| Prompt Injection | Temps reel | < 1s | `llm_prompt_injection_score` |\n| Jailbreak | Temps reel | < 1s | `llm_output_policy_violations_total` |\n| Adversarial Inputs | Temps reel | < 5s | `ml_input_reconstruction_error` |\n| Model Extraction | Comportemental | ~10min | `ml_api_queries_total` |\n| Data Poisoning | Drift detection | ~15min | `ml_prediction_distribution_psi` |\n| System Prompt Extraction | Temps reel | < 1s | `llm_prompt_similarity_to_system` |\n\n## Stack Technologique\n\n| Service | Image | Port(s) | Role |\n|---------|-------|---------|------|\n| `llm-attack-lab` | `python:3.11-slim` | 8081, 8000 | Application principale |\n| `otel-collector` | `otel/opentelemetry-collector-contrib:0.91.0` | 4317, 4318, 8888, 8889 | Pipeline de telemetrie |\n| `victoriametrics` | `victoriametrics/victoria-metrics:v1.96.0` | 8428 | Base de donnees time series |\n| `grafana` | `grafana/grafana:10.2.3` | 3000 | Visualisation et dashboards |\n| `vmagent` | `victoriametrics/vmagent:v1.96.0` | 8429 | Scraping Prometheus |",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Capacites et Stack",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 30
+      },
+      "id": 6,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Architecture\n\n```\n+------------------------------------------------------------------+\n|                    LLM Attack Lab Application                      |\n|  +------------------+  +-------------------+  +-----------------+  |\n|  | Attack Engine    |  | Defense System    |  | Web Interface   |  |\n|  |                  |  |                   |  |                 |  |\n|  | - Prompt Inject  |  | - Guardrails      |  | - Dashboard     |  |\n|  | - Jailbreak      |  | - Output Filter   |  | - API REST      |  |\n|  | - Poisoning      |  | - Input Sanitizer |  | - Metrics       |  |\n|  +--------+---------+  +---------+---------+  +--------+--------+  |\n|           |                      |                     |           |\n|           +----------------------+---------------------+           |\n|                                  |                                 |\n|  +---------------------------+   |   +---------------------------+ |\n|  | MetricsCollector         |   |   | SecurityMetricsCollector  | |\n|  | - Counters               |<--+-->| - Adversarial metrics     | |\n|  | - Histograms             |       | - Behavior metrics        | |\n|  | - Gauges                 |       | - LLM security metrics    | |\n|  +------------+-------------+       +------------+--------------+ |\n|               |                                  |                 |\n|               +----------------------------------+                 |\n|                                |                                   |\n|                    +-----------v-----------+                       |\n|                    |    OTelManager        |                       |\n|                    | (OpenTelemetry SDK)   |                       |\n|                    +-----------+-----------+                       |\n+----------------------------|--------------------------------------|+\n                             |                                      |\n                             | OTLP (gRPC :4317 / HTTP :4318)       |\n                             |                                      |\n              +--------------v--------------+                       |\n              |   OpenTelemetry Collector   |                       |\n              |                             |                       |\n              | - Receivers: otlp, prom     |                       |\n              | - Processors: batch, memory |                       |\n              | - Exporters: prometheusrw   |                       |\n              +--------------+--------------+                       |\n                             |                                      |\n                             | Remote Write                         |\n                             |                                      |\n              +--------------v--------------+       +---------------+\n              |     VictoriaMetrics         |       |    vmAgent    |\n              |                             |<------| (Scraper)     |\n              | - Time Series Database      |       +---------------+\n              | - 30 days retention         |              ^\n              | - PromQL compatible         |              |\n              +--------------+--------------+              |\n                             |                    Scrape :8000, :8428\n                             |                             |\n              +--------------v--------------+              |\n              |        Grafana              |--------------+\n              |                             |\n              | - 2 Dashboards pre-config   |\n              | - Auto-refresh 5-10s        |\n              | - Variable templates        |\n              +-----------------------------+\n```\n\n### Flux de donnees\n\n1. **Collection**: L'application genere des metriques via `MetricsCollector` et `SecurityMetricsCollector`\n2. **Export**: OpenTelemetry SDK expose les metriques au format Prometheus sur `:8000`\n3. **Scraping**: vmAgent et OTel Collector scrapent les endpoints de metriques\n4. **Storage**: VictoriaMetrics stocke les time series (retention 30 jours)\n5. **Visualization**: Grafana query VictoriaMetrics via PromQL\n6. **Alerting**: Les regles Prometheus evaluent les conditions d'alerte",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Architecture",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 44
+      },
+      "id": 7,
+      "panels": [],
+      "title": "Metriques de Securite",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 45
+      },
+      "id": 8,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Mapping Metriques <-> Types d'Attaques\n\n### Matrice de Couverture Securite\n\nCe tableau permet de faire le lien entre les metriques Prometheus et les types d'attaques detectees :\n\n| Metrique | Adversarial | Poisoning | Extraction | Prompt Injection | Jailbreak | Drift |\n|----------|:-----------:|:---------:|:----------:|:----------------:|:---------:|:-----:|\n| `ml_input_reconstruction_error` | X | | | | | |\n| `ml_prediction_confidence_bucket` | X | | | | | |\n| `ml_embedding_distance_to_centroid` | X | | | | | |\n| `ml_prediction_stability_score` | X | | | | | |\n| `ml_unstable_predictions_total` | X | | | | | |\n| `ml_predictions_by_class_total` | | X | | | | X |\n| `ml_prediction_distribution_psi` | | X | | | | X |\n| `ml_api_queries_total` | | | X | | | |\n| `ml_accuracy_by_class` | | X | | | | X |\n| `llm_prompt_injection_score` | | | | X | X | |\n| `llm_prompt_similarity_to_system` | | | X | X | | |\n| `llm_output_policy_violations_total` | | | | | X | |\n| `llm_tool_calls_total` | | | X | X | X | |\n\n---\n\n## Catalogue des Metriques\n\n### Metriques Adversarial (Detection d'inputs malveillants)\n\n| Metrique | Type | Description | Seuil | Attaques detectees |\n|----------|------|-------------|-------|--------------------|\n| `ml_input_reconstruction_error` | Histogram | Erreur de reconstruction autoencoder | > 2.5 | FGSM, PGD, inputs adversariaux |\n| `ml_prediction_confidence_bucket` | Histogram | Distribution des scores de confiance | > 0.95 avec erreur | Inputs adversariaux |\n| `ml_embedding_distance_to_centroid` | Histogram | Distance aux centroides d'entrainement | > 3x threshold | Out-of-distribution, Adversarial |\n| `ml_prediction_stability_score` | Gauge | Variance sous perturbations legeres | Spike > 3x avg | Inputs adversariaux |\n| `ml_unstable_predictions_total` | Counter | Predictions qui changent sous perturbation | rate > 3x avg | Inputs adversariaux |\n\n### Metriques Comportementales (Detection d'anomalies d'usage)\n\n| Metrique | Type | Description | Seuil | Attaques detectees |\n|----------|------|-------------|-------|--------------------|\n| `ml_predictions_by_class_total` | Counter | Distribution des classes predites | Changement soudain | Data poisoning, Drift |\n| `ml_prediction_distribution_psi` | Gauge | Population Stability Index / KL divergence | > 0.2 pendant 15min | Data poisoning, Model drift |\n| `ml_api_queries_total` | Counter | Requetes API par utilisateur/IP | > 100 req/10min | Model extraction |\n| `ml_accuracy_by_class` | Gauge | Precision par classe | Chute > 10% vs baseline | Targeted poisoning |\n\n### Metriques LLM (Detection d'attaques specifiques LLM)\n\n| Metrique | Type | Description | Seuil | Attaques detectees |\n|----------|------|-------------|-------|--------------------|\n| `llm_prompt_injection_score` | Histogram | Score du classifieur d'injection (0-1) | > 0.85 | Prompt injection, Jailbreak |\n| `llm_prompt_similarity_to_system` | Histogram | Similarite avec le system prompt | > 0.7 | System prompt extraction |\n| `llm_output_policy_violations_total` | Counter | Violations des politiques de contenu | Violations repetees | Jailbreak |\n| `llm_tool_calls_total` | Counter | Appels d'outils/fonctions | > 5 appels/5min (dangerous) | Agent attacks, Prompt injection |",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Catalogue des Metriques",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 59
+      },
+      "id": 9,
+      "panels": [],
+      "title": "Alerting",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 0,
+        "y": 60
+      },
+      "id": 10,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Alertes Critiques\n\nAction immediate requise\n\n| Alerte | Condition | Action recommandee |\n|--------|-----------|-------------------|\n| `PromptInjectionDetected` | `injection_score > 0.85` | Bloquer la requete, logger l'incident |\n| `SystemPromptExtractionAttempt` | `similarity > 0.7` | Bloquer, alerter l'equipe securite |\n| `SuspiciousToolUsage` | `dangerous_calls > 5/5min` | Revoquer les permissions, investiguer |\n| `AttackSuccessRateHigh` | `success_rate > 50%` | Renforcer les defenses |\n| `CriticalSecurityAlerts` | `critical_alerts > 0` | Reponse incident immediate |",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Alertes Critiques",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 12,
+        "x": 12,
+        "y": 60
+      },
+      "id": 11,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Alertes Warning\n\nInvestigation requise\n\n| Alerte | Condition | Action recommandee |\n|--------|-----------|-------------------|\n| `PotentialAdversarialInput` | `recon_error > 2.5 AND conf > 0.95` | Analyser l'input, ajuster les seuils |\n| `OutOfDistributionInput` | `distance > 3x threshold` | Logger, monitorer la tendance |\n| `ModelDistributionDrift` | `PSI > 0.2 for 15m` | Verifier les donnees d'entree |\n| `SuspiciousQueryPattern` | `queries > 100/10min` | Rate limiting, verification utilisateur |\n| `LowDetectionRate` | `detection_rate < 50%` | Revoir les mecanismes de detection |",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Alertes Warning",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 70
+      },
+      "id": 12,
+      "panels": [],
+      "title": "Troubleshooting",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 0,
+        "y": 71
+      },
+      "id": 13,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Problemes courants\n\n### 1. Les metriques n'apparaissent pas dans Grafana\n\n**Symptomes**: Dashboards vides, \"No data\"\n\n**Diagnostic**:\n```bash\n# Verifier que l'application expose les metriques\ncurl -s http://localhost:8000/metrics | head -20\n\n# Verifier que VictoriaMetrics recoit les donnees\ncurl -s \"http://localhost:8428/api/v1/query?query=up\"\n\n# Verifier les logs du collecteur\ndocker-compose logs otel-collector | tail -50\n```\n\n**Solutions**:\n- Redemarrer les services: `docker-compose restart`\n- Verifier le reseau: `docker network inspect iattack_monitoring`\n- Verifier les ports: `docker-compose ps`\n\n### 2. Alertes non declenchees\n\n**Symptomes**: Les conditions sont remplies mais pas d'alerte\n\n**Diagnostic**:\n```bash\n# Verifier que les regles sont chargees\ncurl -s http://localhost:8428/api/v1/rules\n\n# Verifier l'etat des alertes\ncurl -s http://localhost:8428/api/v1/alerts\n```\n\n**Solutions**:\n- Recharger les regles: Redemarrer VictoriaMetrics\n- Verifier la syntaxe des regles PromQL\n- Verifier les durations (for: 5m)",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Diagnostic - Partie 1",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 12,
+        "x": 12,
+        "y": 71
+      },
+      "id": 14,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "### 3. Grafana ne se connecte pas a VictoriaMetrics\n\n**Symptomes**: \"Data source is not working\"\n\n**Diagnostic**:\n```bash\n# Tester la connexion depuis le container Grafana\ndocker-compose exec grafana wget -qO- http://victoriametrics:8428/api/v1/query?query=up\n```\n\n**Solutions**:\n- Verifier le nom du service dans datasources.yaml\n- Verifier que le service victoriametrics est up\n- Utiliser `victoriametrics:8428` (nom du service, pas localhost)\n\n### 4. Metriques de securite a 0\n\n**Symptomes**: Tous les compteurs de securite sont a zero\n\n**Solutions**:\n- Activer le stress testing: `AUTO_STRESS=true`\n- Lancer manuellement: `python -m llm_attack_lab --demo`\n- Generer des attaques via l'API:\n```bash\ncurl -X POST http://localhost:8081/api/attack \\\n  -H \"Content-Type: application/json\" \\\n  -d '{\"type\": \"prompt_injection\", \"payload\": \"ignore previous instructions\"}'\n```\n\n### Commandes de debug\n\n```bash\n# Verifier toutes les metriques exposees\ncurl -s http://localhost:8000/metrics | grep -E \"^(llm_|ml_|security_)\"\n\n# Lister les series dans VictoriaMetrics\ncurl -s \"http://localhost:8428/api/v1/series?match[]={__name__=~'llm_.*'}\"\n\n# Tester une requete PromQL\ncurl -s \"http://localhost:8428/api/v1/query?query=sum(llm_attacks_total)\"\n```",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Diagnostic - Partie 2",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 83
+      },
+      "id": 15,
+      "panels": [],
+      "title": "Best Practices & Configuration",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 0,
+        "y": 84
+      },
+      "id": 16,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Best Practices Cyber/Observabilite\n\n### 1. Defense en Profondeur\n\n- Combiner plusieurs metriques pour la detection\n- Ne pas se fier a un seul indicateur\n- Configurer des alertes a plusieurs niveaux (warning, critical)\n\n### 2. Baseline et Contexte\n\n- Toujours etablir une baseline avant de mettre en production\n- Ajuster les seuils selon le contexte metier\n- Documenter les seuils et leur justification\n\n### 3. Correlation des Evenements\n\n- Utiliser les labels pour correler les metriques\n- Investiguer les patterns multi-metriques\n- Exemple: `llm_prompt_injection_score` eleve + `llm_tool_calls_total{is_dangerous=\"true\"}` = attaque probable\n\n### 4. Retention et Forensics\n\n- VictoriaMetrics retient 30 jours par defaut\n- Exporter les alertes pour investigation long terme\n- Logger les requetes suspectes pour analyse post-incident\n\n### 5. Monitoring du Monitoring\n\n- Surveiller la sante de la stack d'observabilite\n- Alerter sur les pertes de metriques\n- Verifier regulierement que les dashboards affichent des donnees",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Best Practices",
+      "type": "text"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 12,
+        "x": 12,
+        "y": 84
+      },
+      "id": 17,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Configuration Avancee\n\n### Variables d'Environnement\n\n```bash\n# === Application ===\nPROMETHEUS_METRICS_PORT=8000      # Port d'export des metriques\nPROMETHEUS_PORT_AUTO=true         # Auto-selection du port si occupe\n\n# === OpenTelemetry ===\nOTEL_SERVICE_NAME=llm-attack-lab\nOTEL_SERVICE_VERSION=1.0.0\nOTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317\nOTEL_ENABLE_TRACING=true\nOTEL_ENABLE_METRICS=true\n\n# === Auto-Stress Testing (pour demo) ===\nAUTO_STRESS=true                  # Active la generation automatique\nAUTO_STRESS_DELAY=5               # Delai avant demarrage (secondes)\nAUTO_STRESS_POPULATE=100          # Nombre d'attaques initiales\nAUTO_STRESS_BATCH=10              # Taille des batches\nAUTO_STRESS_WORKERS=5             # Workers paralleles\nAUTO_STRESS_ATTACK_RATIO=0.7      # Ratio d'attaques vs requetes normales\n```\n\n### Personnalisation des seuils\n\n```python\nfrom llm_attack_lab.monitoring import get_security_metrics\n\nmetrics = get_security_metrics()\n\n# Ajuster les seuils\nmetrics.set_threshold(\"ml_input_reconstruction_error\", 3.0)\nmetrics.set_threshold(\"llm_prompt_injection_score\", 0.90)\nmetrics.set_threshold(\"ml_api_queries_rate\", 200)\n```\n\n### Retention et stockage\n\n```yaml\n# Dans docker-compose.yaml, section victoriametrics\ncommand:\n  - '-retentionPeriod=30d'      # Retention par defaut\n  - '-retentionPeriod=90d'      # 90 jours\n```",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Configuration Avancee",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 98
+      },
+      "id": 18,
+      "panels": [],
+      "title": "Requetes PromQL Utiles",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 24,
+        "x": 0,
+        "y": 99
+      },
+      "id": 19,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Requetes PromQL Utiles\n\n### Metriques Operationnelles\n\n```promql\n# Taux d'attaques par type sur 5 minutes\nsum by (attack_type) (rate(llm_attacks_total[5m]))\n\n# Taux de succes des attaques\nsum(llm_attacks_total{success=\"true\"}) / sum(llm_attacks_total) * 100\n\n# Latence p95 des attaques\nhistogram_quantile(0.95, rate(llm_attack_duration_seconds_bucket[5m]))\n```\n\n### Metriques de Securite\n\n```promql\n# Score d'injection p95 sur 5 minutes\nhistogram_quantile(0.95, rate(llm_prompt_injection_score_bucket[5m]))\n\n# Utilisateurs avec > 100 requetes en 10 minutes (extraction suspecte)\nsum by (user_id) (increase(ml_api_queries_total[10m])) > 100\n\n# Drift PSI superieur au seuil\nml_prediction_distribution_psi > 0.2\n\n# Erreur de reconstruction elevee avec haute confiance (adversarial suspect)\nhistogram_quantile(0.95, rate(ml_input_reconstruction_error_bucket[5m])) > 2.5\n  AND\nhistogram_quantile(0.95, rate(ml_prediction_confidence_bucket[5m])) > 0.95\n```\n\n### Alertes Actives\n\n```promql\n# Compteur d'alertes critiques\nincrease(security_alerts_total{severity=\"critical\"}[1h])\n\n# Violations de politique par type\nsum by (violation_type) (rate(llm_output_policy_violations_total[5m]))\n\n# Appels d'outils dangereux\nsum by (tool_name, user_id) (rate(llm_tool_calls_total{is_dangerous=\"true\"}[5m])) * 300\n```",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "Exemples PromQL",
+      "type": "text"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 111
+      },
+      "id": 20,
+      "panels": [],
+      "title": "References",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "datasource",
+        "uid": "grafana"
+      },
+      "gridPos": {
+        "h": 6,
+        "w": 24,
+        "x": 0,
+        "y": 112
+      },
+      "id": 21,
+      "options": {
+        "code": {
+          "language": "plaintext",
+          "showLineNumbers": false,
+          "showMiniMap": false
+        },
+        "content": "## Liens utiles\n\n| Ressource | Description | URL |\n|-----------|-------------|-----|\n| **OWASP Top 10 for LLM Applications** | Vulnerabilites LLM | https://owasp.org/www-project-top-10-for-large-language-model-applications/ |\n| **MITRE ATLAS** | Framework attaques ML | https://atlas.mitre.org/ |\n| **OpenTelemetry Documentation** | Standard de telemetrie | https://opentelemetry.io/docs/ |\n| **VictoriaMetrics Documentation** | Base de donnees time series | https://docs.victoriametrics.com/ |\n| **Grafana Documentation** | Visualisation et dashboards | https://grafana.com/docs/ |\n| **PromQL Cheat Sheet** | Reference langage PromQL | https://promlabs.com/promql-cheat-sheet/ |\n\n---\n\n**Version**: 1.0.0 | **Derniere mise a jour**: 2025-01",
+        "mode": "markdown"
+      },
+      "pluginVersion": "10.2.3",
+      "title": "References et Liens",
+      "type": "text"
+    }
+  ],
+  "refresh": "",
+  "schemaVersion": 39,
+  "tags": ["documentation", "llm", "security", "help"],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "Documentation",
+  "uid": "llm-attack-lab-docs",
+  "version": 1,
+  "weekStart": ""
+}
