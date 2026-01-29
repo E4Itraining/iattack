@@ -35,6 +35,20 @@ except ImportError:
     SECURITY_METRICS_ENABLED = False
     get_security_metrics = None
 
+# Metrics Simulator integration
+try:
+    from llm_attack_lab.monitoring.metrics_simulator import (
+        get_metrics_simulator,
+        start_metrics_simulation,
+        stop_metrics_simulation
+    )
+    METRICS_SIMULATOR_ENABLED = True
+except ImportError:
+    METRICS_SIMULATOR_ENABLED = False
+    get_metrics_simulator = None
+    start_metrics_simulation = None
+    stop_metrics_simulation = None
+
 # Flask instrumentation
 try:
     from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -455,6 +469,65 @@ def stress_status():
     return jsonify(runner.get_status())
 
 
+# ============================================================================
+# Metrics Simulator Endpoints
+# ============================================================================
+
+@app.route('/api/simulator/start', methods=['POST'])
+def start_simulator():
+    """Start the security metrics simulator"""
+    if not METRICS_SIMULATOR_ENABLED or not start_metrics_simulation:
+        return jsonify({'error': 'Metrics simulator not available'}), 503
+
+    data = request.get_json() or {}
+    interval = data.get('interval', 1.0)
+
+    try:
+        start_metrics_simulation(interval)
+        return jsonify({'status': 'started', 'interval': interval})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulator/stop', methods=['POST'])
+def stop_simulator():
+    """Stop the security metrics simulator"""
+    if not METRICS_SIMULATOR_ENABLED or not stop_metrics_simulation:
+        return jsonify({'error': 'Metrics simulator not available'}), 503
+
+    try:
+        stop_metrics_simulation()
+        return jsonify({'status': 'stopped'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/simulator/status')
+def simulator_status():
+    """Get the metrics simulator status"""
+    if not METRICS_SIMULATOR_ENABLED or not get_metrics_simulator:
+        return jsonify({
+            'available': False,
+            'running': False
+        })
+
+    try:
+        sim = get_metrics_simulator()
+        return jsonify({
+            'available': True,
+            'running': sim._running,
+            'in_attack_wave': sim._in_attack_wave,
+            'wave_type': sim._wave_type,
+            'threat_level': sim._current_threat_level
+        })
+    except Exception as e:
+        return jsonify({
+            'available': True,
+            'running': False,
+            'error': str(e)
+        })
+
+
 @app.route('/health')
 def health():
     """Health check endpoint"""
@@ -462,6 +535,7 @@ def health():
         'status': 'healthy',
         'service': 'llm-attack-lab',
         'otel_enabled': OTEL_ENABLED,
+        'metrics_simulator_enabled': METRICS_SIMULATOR_ENABLED,
     })
 
 
@@ -572,6 +646,13 @@ def run_web_server(host='0.0.0.0', port=None, debug=None, auto_stress=None):
         import threading
         stress_thread = threading.Thread(target=_auto_start_stress, daemon=True)
         stress_thread.start()
+
+    # Check for metrics simulator auto-start
+    metrics_simulator_enabled = os.getenv('METRICS_SIMULATOR', 'true').lower() == 'true'
+    if metrics_simulator_enabled and METRICS_SIMULATOR_ENABLED and start_metrics_simulation:
+        simulator_interval = float(os.getenv('METRICS_SIMULATOR_INTERVAL', '1.0'))
+        print(f"Starting security metrics simulator (interval: {simulator_interval}s)")
+        start_metrics_simulation(simulator_interval)
 
     # threaded=True is REQUIRED for SSE streaming to work properly
     app.run(host=host, port=actual_port, debug=debug, threaded=True)

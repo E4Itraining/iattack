@@ -23,6 +23,13 @@ from .security_metrics import (
     AttackPattern,
     SECURITY_METRICS_CATALOG,
 )
+from .metrics_simulator import (
+    SecurityMetricsSimulator,
+    SimulationConfig,
+    get_metrics_simulator,
+    start_metrics_simulation,
+    stop_metrics_simulation,
+)
 
 __all__ = [
     # Core metrics
@@ -44,4 +51,10 @@ __all__ = [
     "init_security_metrics",
     "AttackPattern",
     "SECURITY_METRICS_CATALOG",
+    # Metrics simulator
+    "SecurityMetricsSimulator",
+    "SimulationConfig",
+    "get_metrics_simulator",
+    "start_metrics_simulation",
+    "stop_metrics_simulation",
 ]
