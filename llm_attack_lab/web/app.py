@@ -26,6 +26,14 @@ except ImportError:
     init_telemetry = None
     get_otel_manager = None
 
+# Security Metrics integration
+try:
+    from llm_attack_lab.monitoring.security_metrics import get_security_metrics
+    SECURITY_METRICS_ENABLED = True
+except ImportError:
+    SECURITY_METRICS_ENABLED = False
+    get_security_metrics = None
+
 # Flask instrumentation
 try:
     from opentelemetry.instrumentation.flask import FlaskInstrumentor
@@ -44,6 +52,15 @@ if OTEL_ENABLED:
             FlaskInstrumentor().instrument_app(app)
     except Exception as e:
         print(f"Warning: Could not initialize OpenTelemetry: {e}")
+
+# Initialize Security Metrics if available
+security_metrics = None
+if SECURITY_METRICS_ENABLED:
+    try:
+        security_metrics = get_security_metrics()
+        print("Security metrics collector initialized")
+    except Exception as e:
+        print(f"Warning: Could not initialize Security Metrics: {e}")
 
 # Global instances
 simulator = LLMSimulator()
@@ -156,6 +173,46 @@ def simulate():
                     detected=True,
                     duration=duration
                 )
+
+    # Record security metrics for advanced monitoring
+    if security_metrics:
+        # Record API query
+        security_metrics.record_api_query(
+            user_id="web_user",
+            ip_address=request.remote_addr or "unknown",
+            endpoint="/api/simulate"
+        )
+
+        # Record prompt injection score based on detection
+        if metadata.get('attacks_detected'):
+            for attack in metadata['attacks_detected']:
+                # High score if attack was detected
+                injection_score = attack.get('confidence', 0.85)
+                security_metrics.record_prompt_injection_score(
+                    score=injection_score,
+                    model_name="llm-simulator",
+                    detection_method="rule_based"
+                )
+                # Record security alert
+                security_metrics.record_security_alert(
+                    alert_type=attack['type'],
+                    severity="high" if metadata.get('compromised') else "medium",
+                    pattern="llm"
+                )
+                # Record policy violation if compromised
+                if metadata.get('compromised'):
+                    security_metrics.record_policy_violation(
+                        model_name="llm-simulator",
+                        violation_type=attack['type'],
+                        severity="critical"
+                    )
+        else:
+            # Low injection score for clean requests
+            security_metrics.record_prompt_injection_score(
+                score=0.1,
+                model_name="llm-simulator",
+                detection_method="rule_based"
+            )
 
     if metadata.get('attacks_detected'):
         for attack in metadata['attacks_detected']:
