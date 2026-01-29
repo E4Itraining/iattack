@@ -315,17 +315,32 @@ class OTelManager:
             if "attack_duration" in self._prom_metrics:
                 self._prom_metrics["attack_duration"].labels(attack_type=attack_type)
 
-        # Initialize defense actions
+        # Initialize defense actions with baseline data
         defense_types = ["input_sanitizer", "output_filter", "guardrails"]
         actions = ["block", "warn", "allow"]
         threat_levels = ["low", "medium", "high", "critical"]
+        # Baseline distribution: more allows, fewer blocks, based on threat level
+        baseline_counts = {
+            ("allow", "low"): 10,
+            ("allow", "medium"): 5,
+            ("warn", "low"): 3,
+            ("warn", "medium"): 4,
+            ("warn", "high"): 2,
+            ("block", "medium"): 1,
+            ("block", "high"): 2,
+            ("block", "critical"): 3,
+        }
         for defense in defense_types:
             for action in actions:
                 for level in threat_levels:
                     if "defense_actions" in self._prom_metrics:
-                        self._prom_metrics["defense_actions"].labels(
+                        counter = self._prom_metrics["defense_actions"].labels(
                             defense_type=defense, action=action, threat_level=level
                         )
+                        # Add baseline increments for realistic initial data
+                        count = baseline_counts.get((action, level), 0)
+                        if count > 0:
+                            counter.inc(count)
 
         # Initialize request metrics
         endpoints = ["/api/simulate", "/api/status", "/stress/populate", "/stress/stress"]
