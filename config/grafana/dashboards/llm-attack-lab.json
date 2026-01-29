@@ -645,7 +645,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (attack_type) (llm_attacks_total)",
+          "expr": "sum by (attack_type) (llm_attacks_total) or vector(0)",
           "legendFormat": "{{attack_type}}",
           "range": true,
           "refId": "A"
@@ -902,7 +902,7 @@
             "uid": "PBFA97CFB590B2093"
           },
           "editorMode": "code",
-          "expr": "sum by (threat_level) (llm_defense_actions_total)",
+          "expr": "sum by (threat_level) (llm_defense_actions_total) or vector(0)",
           "legendFormat": "{{threat_level}}",
           "range": true,
           "refId": "A"

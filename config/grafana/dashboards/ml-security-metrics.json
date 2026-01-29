@@ -570,7 +570,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.5, rate(ml_prediction_confidence_bucket[5m]))",
+          "expr": "histogram_quantile(0.5, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
           "legendFormat": "{{ predicted_class }}",
           "range": true,
           "refId": "A"
@@ -818,8 +818,82 @@
       "type": "timeseries"
     },
     {
+      "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+      "description": "Detects potential membership inference attacks by monitoring confidence score patterns combined with query rates",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "Score",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 20,
+            "gradientMode": "none",
+            "hideFrom": { "legend": false, "tooltip": false, "viz": false },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineWidth": 2,
+            "pointSize": 5,
+            "scaleDistribution": { "type": "linear" },
+            "showPoints": "never",
+            "spanNulls": false,
+            "stacking": { "group": "A", "mode": "none" },
+            "thresholdsStyle": { "mode": "line" }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.9 },
+              { "color": "red", "value": 0.95 }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 39 },
+      "id": 305,
+      "options": {
+        "legend": { "calcs": ["mean", "max"], "displayMode": "table", "placement": "right", "showLegend": true },
+        "tooltip": { "mode": "multi", "sort": "desc" }
+      },
+      "targets": [
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "histogram_quantile(0.99, rate(ml_prediction_confidence_bucket[5m])) or vector(0)",
+          "legendFormat": "Confidence p99",
+          "range": true,
+          "refId": "A"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "(sum(rate(ml_api_queries_total[5m])) / 10) or vector(0)",
+          "legendFormat": "Query Rate (normalized)",
+          "range": true,
+          "refId": "B"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "expr": "avg(ml_embedding_distance_to_centroid) or vector(0)",
+          "legendFormat": "Avg Embedding Distance",
+          "range": true,
+          "refId": "C"
+        }
+      ],
+      "title": "Membership Inference Detection",
+      "type": "timeseries"
+    },
+    {
       "collapsed": false,
-      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 39 },
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 47 },
       "id": 400,
       "panels": [],
       "title": "LLM Security",
@@ -1102,7 +1176,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
           "editorMode": "code",
-          "expr": "sum by (is_dangerous) (increase(llm_tool_calls_total[1h]))",
+          "expr": "sum by (is_dangerous) (increase(llm_tool_calls_total[1h])) or vector(0)",
           "legendFormat": "{{ is_dangerous }}",
           "range": true,
           "refId": "A"
@@ -1218,6 +1292,28 @@
           "legendFormat": "Jailbreak",
           "range": false,
           "refId": "violations"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "(histogram_quantile(0.99, rate(ml_prediction_confidence_bucket[5m])) > 0.9) or vector(0)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Membership Inference",
+          "range": false,
+          "refId": "membership"
+        },
+        {
+          "datasource": { "type": "prometheus", "uid": "PBFA97CFB590B2093" },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "sum(rate(llm_prompt_similarity_to_system_count[5m])) or vector(0)",
+          "format": "table",
+          "instant": true,
+          "legendFormat": "Extraction",
+          "range": false,
+          "refId": "extraction"
         }
       ],
       "title": "Active Security Monitoring Coverage",
