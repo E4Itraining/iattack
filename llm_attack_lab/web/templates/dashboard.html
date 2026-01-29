@@ -1646,12 +1646,17 @@
             timelineChart.data.datasets[1].data.push(defenses.blocked_requests || 0);
             timelineChart.update('none');
 
-            // Update defense chart
+            // Update defense chart - only show data when there are actual attacks
             const blocked = defenses.blocked_requests || 0;
             const detected = attacks.detected_attacks || 0;
             const passed = (defenses.total_requests || 0) - blocked;
 
-            defenseChart.data.datasets[0].data = [blocked, detected, Math.max(0, passed)];
+            if (attacks.total_attacks > 0) {
+                defenseChart.data.datasets[0].data = [blocked, detected, Math.max(0, passed)];
+            } else {
+                // Reset chart when no attacks
+                defenseChart.data.datasets[0].data = [0, 0, 0];
+            }
             defenseChart.update('none');
 
             // Update attack types chart (based on attack history)
@@ -1661,7 +1666,8 @@
             const hasTimelineData = timelineChart.data.labels.length > 0 &&
                 (timelineChart.data.datasets[0].data.some(v => v > 0) ||
                  timelineChart.data.datasets[1].data.some(v => v > 0));
-            const hasDefenseData = blocked > 0 || detected > 0 || passed > 0;
+            // Only show defense data when there are actual attacks
+            const hasDefenseData = attacks.total_attacks > 0 && (blocked > 0 || detected > 0 || passed > 0);
             const hasTypesData = attacks.total_attacks > 0;
 
             toggleEmptyState('timeline-empty', hasTimelineData);
