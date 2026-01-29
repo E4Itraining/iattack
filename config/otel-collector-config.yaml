@@ -81,11 +81,12 @@ exporters:
     sampling_thereafter: 200
 
   # OTLP exporter (for future Tempo/Jaeger integration)
-  # Note: Configure endpoint to point to your trace backend (e.g., Jaeger, Tempo)
-  otlp/traces:
-    endpoint: "${OTLP_TRACES_ENDPOINT:-jaeger:4317}"
-    tls:
-      insecure: true
+  # Note: To enable, add to traces pipeline exporters and set endpoint
+  # Currently disabled - uncomment and configure when Jaeger/Tempo is added
+  # otlp/traces:
+  #   endpoint: "jaeger:4317"
+  #   tls:
+  #     insecure: true
 
 extensions:
   # Health check extension
