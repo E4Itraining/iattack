@@ -460,3 +460,171 @@ class TestBombardAttackEngine:
             f"Attendu {ROUNDS_LIGHT} events, recu {len(events)}"
         )
         print(f"\n    >> {len(events)} events observes sur {ROUNDS_LIGHT} tirs")
+
+
+# ==========================================================================
+#  BOMBARDEMENT HTTP REEL (pour Grafana/Prometheus)
+# ==========================================================================
+
+
+class TestBombardHTTP:
+    """
+    Bombardement avec de vraies requetes HTTP.
+
+    Ces tests envoient de vraies requetes HTTP au serveur web,
+    ce qui permet de voir les metriques sur Grafana/Prometheus.
+
+    PREREQUIS: Le serveur doit etre demarre avant d'executer ces tests.
+    Utilisez: python -m llm_attack_lab.web.app
+
+    Ces tests sont marques 'http' en plus de 'bombard' pour les distinguer.
+    """
+
+    BASE_URL = "http://localhost:8081"
+
+    @pytest.fixture(autouse=True)
+    def check_server(self):
+        """Verifie que le serveur est accessible avant chaque test"""
+        import urllib.request
+        import urllib.error
+        try:
+            req = urllib.request.Request(f"{self.BASE_URL}/health")
+            with urllib.request.urlopen(req, timeout=2) as resp:
+                if resp.status != 200:
+                    pytest.skip("Serveur non accessible - demarrez-le avec: python -m llm_attack_lab.web.app")
+        except (urllib.error.URLError, ConnectionRefusedError, OSError):
+            pytest.skip("Serveur non accessible - demarrez-le avec: python -m llm_attack_lab.web.app")
+
+    def _post_json(self, endpoint: str, data: dict) -> dict:
+        """Envoie une requete POST JSON au serveur"""
+        import urllib.request
+        url = f"{self.BASE_URL}{endpoint}"
+        body = json.dumps(data).encode('utf-8')
+        req = urllib.request.Request(url, data=body, method='POST')
+        req.add_header('Content-Type', 'application/json')
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+
+    def _get_json(self, endpoint: str) -> dict:
+        """Envoie une requete GET au serveur"""
+        import urllib.request
+        url = f"{self.BASE_URL}{endpoint}"
+        req = urllib.request.Request(url)
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            return json.loads(resp.read().decode('utf-8'))
+
+    @pytest.mark.bombard
+    @pytest.mark.http
+    def test_http_bombardment_attacks(self):
+        """
+        Bombardement HTTP: envoie de vraies attaques au serveur.
+        Les metriques seront visibles sur Grafana/Prometheus.
+        """
+        success = 0
+        compromised = 0
+        errors = []
+
+        print(f"\n    >> Bombardement HTTP vers {self.BASE_URL}")
+
+        for i in range(ROUNDS_MEDIUM):
+            payload = ATTACK_PAYLOADS[i % len(ATTACK_PAYLOADS)]
+            level = ["NONE", "LOW", "MEDIUM", "HIGH", "MAXIMUM"][i % 5]
+
+            try:
+                result = self._post_json('/api/simulate', {
+                    'input': payload,
+                    'security_level': level
+                })
+                success += 1
+                if result.get('metadata', {}).get('compromised'):
+                    compromised += 1
+            except Exception as e:
+                errors.append(f"Round {i}: {e}")
+
+            # Afficher la progression tous les 50 rounds
+            if (i + 1) % 50 == 0:
+                print(f"    >> {i + 1}/{ROUNDS_MEDIUM} requetes envoyees...")
+
+        assert len(errors) < ROUNDS_MEDIUM * 0.1, (
+            f"Trop d'erreurs: {len(errors)}/{ROUNDS_MEDIUM}"
+        )
+        print(f"\n    >> {ROUNDS_MEDIUM} requetes HTTP: {success} OK, {compromised} compromissions")
+        print(f"    >> Verifiez les metriques sur Grafana/Prometheus!")
+
+    @pytest.mark.bombard
+    @pytest.mark.http
+    def test_http_mixed_traffic(self):
+        """
+        Trafic mixte HTTP: alternance sain/malveillant.
+        Simule un trafic realiste pour observer les defenses.
+        """
+        safe_ok = 0
+        attack_ok = 0
+        detected = 0
+
+        for i in range(ROUNDS_LIGHT):
+            if i % 3 == 0:
+                # Requete saine
+                payload = SAFE_PAYLOADS[i % len(SAFE_PAYLOADS)]
+                is_attack = False
+            else:
+                # Attaque
+                payload = ATTACK_PAYLOADS[i % len(ATTACK_PAYLOADS)]
+                is_attack = True
+
+            result = self._post_json('/api/simulate', {
+                'input': payload,
+                'security_level': 'MEDIUM'
+            })
+
+            metadata = result.get('metadata', {})
+            if is_attack:
+                attack_ok += 1
+                if metadata.get('attacks_detected'):
+                    detected += 1
+            else:
+                safe_ok += 1
+
+        print(f"\n    >> Trafic mixte: {safe_ok} sains, {attack_ok} attaques, {detected} detectees")
+        print(f"    >> Verifiez les metriques sur Grafana!")
+
+    @pytest.mark.bombard
+    @pytest.mark.http
+    def test_http_rapid_fire(self):
+        """
+        Tir rapide HTTP: attaques en rafale sans pause.
+        Teste la capacite du serveur a gerer le trafic intense.
+        """
+        from concurrent.futures import ThreadPoolExecutor, as_completed
+
+        results = {"success": 0, "errors": 0, "compromised": 0}
+        lock = threading.Lock()
+
+        def fire_attack(payload, level):
+            try:
+                result = self._post_json('/api/simulate', {
+                    'input': payload,
+                    'security_level': level
+                })
+                with lock:
+                    results["success"] += 1
+                    if result.get('metadata', {}).get('compromised'):
+                        results["compromised"] += 1
+            except Exception:
+                with lock:
+                    results["errors"] += 1
+
+        # Envoi parallele de 50 attaques
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = []
+            for i in range(ROUNDS_LIGHT):
+                payload = ATTACK_PAYLOADS[i % len(ATTACK_PAYLOADS)]
+                level = ["NONE", "LOW", "MEDIUM"][i % 3]
+                futures.append(executor.submit(fire_attack, payload, level))
+
+            for future in as_completed(futures):
+                pass  # Attendre la fin de toutes les taches
+
+        print(f"\n    >> Tir rapide: {results['success']} OK, {results['errors']} erreurs")
+        print(f"    >> {results['compromised']} compromissions detectees")
+        assert results["success"] > ROUNDS_LIGHT * 0.9, "Trop d'echecs lors du tir rapide"

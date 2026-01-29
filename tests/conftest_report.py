@@ -148,9 +148,16 @@ class ClearReportPlugin:
         self._total_tests = 0
         # Mode verbose via variable d'environnement
         self._verbose = os.environ.get("TEST_VERBOSE", "").lower() in ("1", "true", "yes")
-        # Dupliquer le fd stderr pour un acces stable meme si
-        # sys.stderr est remplace par un test ou un plugin
-        self._fd = os.dup(2)
+        # Use stdout for output (more compatible across systems including macOS)
+        # Fallback to stderr fd if stdout is not available
+        try:
+            # Try to use stdout directly - more compatible with macOS terminals
+            self._fd = os.dup(1)  # stdout instead of stderr
+        except Exception:
+            try:
+                self._fd = os.dup(2)  # fallback to stderr
+            except Exception:
+                self._fd = 1  # last resort: use stdout directly
         self._spinner = Spinner(self._fd)
 
     def _out(self, text=""):
