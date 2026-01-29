@@ -9,6 +9,7 @@ import os
 import json
 import time
 import socket
+from typing import Optional
 from flask import Flask, render_template, request, jsonify, Response
 from llm_attack_lab.core.llm_simulator import LLMSimulator, SecurityLevel
 from llm_attack_lab.attacks import ATTACK_REGISTRY
@@ -369,7 +370,7 @@ def _is_port_available(port: int, host: str = "0.0.0.0") -> bool:
         return False
 
 
-def _find_available_port(base_port: int, host: str = "0.0.0.0", port_range: int = 10) -> int | None:
+def _find_available_port(base_port: int, host: str = "0.0.0.0", port_range: int = 10) -> Optional[int]:
     """Find an available port starting from base_port"""
     if _is_port_available(base_port, host):
         return base_port
