@@ -64,11 +64,19 @@ class InputSanitizer:
         (r'<\|[^|]+\|>', 'special_token', ThreatLevel.CRITICAL),
         (r'\[INST\]|\[/INST\]', 'instruction_token', ThreatLevel.CRITICAL),
         (r'###\s*(system|instruction|user|assistant)', 'markdown_injection', ThreatLevel.HIGH),
+        (r'<<SYS>>|<</SYS>>', 'llama_system_token', ThreatLevel.CRITICAL),
 
         # Jailbreak indicators
         (r'\bDAN\b|do\s+anything\s+now', 'dan_jailbreak', ThreatLevel.CRITICAL),
         (r'developer\s+mode', 'dev_mode', ThreatLevel.HIGH),
-        (r'jailbreak|bypass\s+(safety|restrictions?)', 'explicit_jailbreak', ThreatLevel.CRITICAL),
+        (r'jailbreak|bypass\s+(safety|restrictions?|filters?)', 'explicit_jailbreak', ThreatLevel.CRITICAL),
+        (r'hypothetically|if\s+you\s+had\s+no\s+rules', 'hypothetical_jailbreak', ThreatLevel.MEDIUM),
+        (r'act\s+as\s+if\s+(all\s+)?', 'act_as_if', ThreatLevel.MEDIUM),
+        (r'no\s+(content\s+)?polic(y|ies)', 'policy_bypass', ThreatLevel.HIGH),
+        (r'override\s+(your\s+)?(system\s+)?prompt', 'prompt_override', ThreatLevel.CRITICAL),
+        (r'i\s+am\s+(your\s+)?developer', 'developer_claim', ThreatLevel.HIGH),
+        (r'no\s+(safety\s+)?guidelines?', 'guideline_bypass', ThreatLevel.HIGH),
+        (r'unrestricted\s+(AI|assistant)', 'unrestricted_claim', ThreatLevel.MEDIUM),
     ]
 
     # Dangerous keywords
