@@ -172,12 +172,32 @@ run_bombard() {
     echo -e "${CYAN}============================================${NC}"
     echo ""
     echo -e "${YELLOW}Envoi de centaines de requetes en rafale...${NC}"
+    echo -e "${YELLOW}(tests en memoire - pas de metriques Grafana)${NC}"
     echo ""
 
     $PYTHON -m pytest tests/test_bombard.py \
         -v \
         --tb=long \
-        -m "bombard" \
+        -m "bombard and not http" \
+        -s
+}
+
+# Exécuter les tests HTTP réels (pour Grafana/Prometheus)
+run_http() {
+    echo -e "${CYAN}============================================${NC}"
+    echo -e "${CYAN}  BOMBARDEMENT HTTP REEL (Grafana/Prometheus)${NC}"
+    echo -e "${CYAN}============================================${NC}"
+    echo ""
+    echo -e "${YELLOW}PREREQUIS: Le serveur doit etre demarre!${NC}"
+    echo -e "${YELLOW}  python -m llm_attack_lab.web.app${NC}"
+    echo ""
+    echo -e "${GREEN}Les metriques seront visibles sur Grafana.${NC}"
+    echo ""
+
+    $PYTHON -m pytest tests/test_bombard.py \
+        -v \
+        --tb=long \
+        -m "http" \
         -s
 }
 
@@ -220,7 +240,8 @@ show_help() {
     echo "  unit        Executer uniquement les tests unitaires"
     echo "  integration Executer uniquement les tests d'integration"
     echo "  web         Executer uniquement les tests Web/API"
-    echo "  bombard     Bombardement / stress tests (centaines de requetes)"
+    echo "  bombard     Bombardement / stress tests (en memoire, pas de Grafana)"
+    echo "  http        Bombardement HTTP reel (AVEC metriques Grafana/Prometheus)"
     echo "  all         Tests complets + bombardement"
     echo "  verbose     Executer avec logs detailles"
     echo "  help        Afficher cette aide"
@@ -230,7 +251,8 @@ show_help() {
     echo ""
     echo "Exemples:"
     echo "  ./run_tests.sh              # Tous les tests (hors bombardement)"
-    echo "  ./run_tests.sh bombard      # Stress tests uniquement"
+    echo "  ./run_tests.sh bombard      # Stress tests en memoire"
+    echo "  ./run_tests.sh http         # Bombardement HTTP reel (demarre le serveur avant!)"
     echo "  ./run_tests.sh all          # Tout: tests + bombardement"
     echo "  ./run_tests.sh verbose      # Tests avec logs detailles"
     echo "  TEST_VERBOSE=1 ./run_tests.sh bombard  # Bombardement + logs"
@@ -257,6 +279,9 @@ case "${1:-}" in
         ;;
     bombard)
         run_bombard
+        ;;
+    http)
+        run_http
         ;;
     all)
         run_all
