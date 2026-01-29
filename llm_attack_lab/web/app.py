@@ -8,6 +8,7 @@ Includes OpenTelemetry integration for observability.
 import os
 import json
 import time
+import socket
 from flask import Flask, render_template, request, jsonify, Response
 from llm_attack_lab.core.llm_simulator import LLMSimulator, SecurityLevel
 from llm_attack_lab.attacks import ATTACK_REGISTRY
@@ -357,13 +358,72 @@ def ready():
     return jsonify({'status': 'ready'})
 
 
-def run_web_server(host='0.0.0.0', port=8081, debug=None):
-    """Run the web server"""
+def _is_port_available(port: int, host: str = "0.0.0.0") -> bool:
+    """Check if a port is available for binding"""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            s.bind((host, port))
+            return True
+    except OSError:
+        return False
+
+
+def _find_available_port(base_port: int, host: str = "0.0.0.0", port_range: int = 10) -> int | None:
+    """Find an available port starting from base_port"""
+    if _is_port_available(base_port, host):
+        return base_port
+
+    print(f"Port {base_port} is in use, searching for available port...")
+    for offset in range(1, port_range + 1):
+        candidate_port = base_port + offset
+        if _is_port_available(candidate_port, host):
+            print(f"Found available port: {candidate_port}")
+            return candidate_port
+
+    return None
+
+
+def run_web_server(host='0.0.0.0', port=None, debug=None):
+    """Run the web server
+
+    Args:
+        host: Host to bind to (default: 0.0.0.0)
+        port: Port to bind to (default: from WEB_SERVER_PORT env var or 8081)
+        debug: Enable debug mode (default: from FLASK_DEBUG env var)
+
+    Environment variables:
+        WEB_SERVER_PORT: Default port (default: 8081)
+        WEB_SERVER_PORT_AUTO: Enable auto port selection if default is busy (default: true)
+        WEB_SERVER_PORT_RANGE: Range of ports to try (default: 10)
+        FLASK_DEBUG: Enable debug mode (default: false)
+    """
+    # Use environment variable for port, default to 8081
+    if port is None:
+        port = int(os.getenv('WEB_SERVER_PORT', '8081'))
+
     # Use environment variable for debug mode, default to False in production
     if debug is None:
         debug = os.getenv('FLASK_DEBUG', 'false').lower() == 'true'
 
-    print(f"Starting LLM Attack Lab Dashboard on http://{host}:{port}")
+    # Check if auto port selection is enabled
+    port_auto = os.getenv('WEB_SERVER_PORT_AUTO', 'true').lower() == 'true'
+    port_range = int(os.getenv('WEB_SERVER_PORT_RANGE', '10'))
+
+    # Find available port
+    actual_port = port
+    if port_auto:
+        actual_port = _find_available_port(port, host, port_range)
+        if actual_port is None:
+            print(f"Error: No available port found in range {port}-{port + port_range}")
+            print(f"Set WEB_SERVER_PORT to a different port or increase WEB_SERVER_PORT_RANGE")
+            return
+    elif not _is_port_available(port, host):
+        print(f"Error: Port {port} is already in use")
+        print(f"Set WEB_SERVER_PORT to a different port or enable auto selection with WEB_SERVER_PORT_AUTO=true")
+        return
+
+    print(f"Starting LLM Attack Lab Dashboard on http://{host}:{actual_port}")
     print(f"OpenTelemetry enabled: {OTEL_ENABLED}")
     if OTEL_ENABLED and otel_manager:
         prom_port = otel_manager.prometheus_port
@@ -373,7 +433,7 @@ def run_web_server(host='0.0.0.0', port=8081, debug=None):
             print("Prometheus metrics server not started (port conflict or disabled)")
 
     # threaded=True is REQUIRED for SSE streaming to work properly
-    app.run(host=host, port=port, debug=debug, threaded=True)
+    app.run(host=host, port=actual_port, debug=debug, threaded=True)
 
 
 if __name__ == '__main__':

@@ -84,6 +84,13 @@ def main():
     )
 
     parser.add_argument(
+        "--port", "-p",
+        type=int,
+        default=None,
+        help="Port pour le serveur web (défaut: 8081, ou WEB_SERVER_PORT)"
+    )
+
+    parser.add_argument(
         "--attack", "-a",
         choices=list(ATTACK_REGISTRY.keys()),
         help="Exécuter une attaque spécifique"
@@ -112,7 +119,7 @@ def main():
     if args.web:
         from llm_attack_lab.web.app import run_web_server
         console.print("\n[bold green][WEB] Demarrage du serveur web...[/]")
-        run_web_server()
+        run_web_server(port=args.port)
         return
 
     if args.attack:
