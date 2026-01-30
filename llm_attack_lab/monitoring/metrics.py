@@ -271,6 +271,23 @@ class MetricsCollector:
                 "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
             }
 
+    def _get_counters_by_attack_type(self, prefix: str) -> Dict[str, int]:
+        """Extract counter values grouped by attack_type label"""
+        by_type = {}
+        with self._lock:
+            for key, value in self._counters.items():
+                # Match keys like "prefix{attack_type="type_name"}"
+                if key.startswith(f"{prefix}{{attack_type="):
+                    # Extract attack type from key
+                    try:
+                        start = key.index('attack_type="') + len('attack_type="')
+                        end = key.index('"', start)
+                        attack_type = key[start:end]
+                        by_type[attack_type] = int(value)
+                    except (ValueError, IndexError):
+                        continue
+        return by_type
+
     def get_attack_summary(self) -> Dict:
         """Get attack-specific summary aggregated across all attack types"""
         # Aggregate counters across all attack type labels
@@ -281,6 +298,9 @@ class MetricsCollector:
         # Combine duration timers across all attack types
         all_durations = self._combine_timers_by_prefix("attack_duration")
 
+        # Get breakdown by attack type
+        by_type = self._get_counters_by_attack_type("attacks_total")
+
         return {
             "total_attacks": int(total),
             "successful_attacks": int(successful),
@@ -288,6 +308,7 @@ class MetricsCollector:
             "success_rate": (successful / total * 100) if total > 0 else 0,
             "detection_rate": (detected / total * 100) if total > 0 else 0,
             "attack_duration": self._compute_stats(all_durations),
+            "by_type": by_type,
         }
 
     def get_defense_summary(self) -> Dict:
