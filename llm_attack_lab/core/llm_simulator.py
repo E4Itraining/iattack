@@ -1,5 +1,5 @@
 """
-LLM Simulator - Simule le comportement d'un LLM pour les démonstrations d'attaques
+LLM Simulator - Simulates LLM behavior for attack demonstrations
 """
 
 import re
@@ -10,20 +10,20 @@ from enum import Enum
 
 
 class SecurityLevel(Enum):
-    """Niveaux de sécurité du LLM simulé"""
-    NONE = 0        # Aucune protection
-    LOW = 1         # Protections basiques
-    MEDIUM = 2      # Protections modérées
-    HIGH = 3        # Protections avancées
-    MAXIMUM = 4     # Toutes les protections
+    """Security levels of the simulated LLM"""
+    NONE = 0        # No protection
+    LOW = 1         # Basic protections
+    MEDIUM = 2      # Moderate protections
+    HIGH = 3        # Advanced protections
+    MAXIMUM = 4     # All protections
 
 
 @dataclass
 class LLMConfig:
-    """Configuration du LLM simulé"""
+    """Simulated LLM configuration"""
     name: str = "SimuLLM-1.0"
     security_level: SecurityLevel = SecurityLevel.MEDIUM
-    system_prompt: str = "Tu es un assistant utile et sécurisé."
+    system_prompt: str = "You are a helpful and secure assistant."
     blocked_topics: List[str] = field(default_factory=lambda: [
         "weapons", "hacking", "illegal", "violence", "drugs"
     ])
@@ -33,7 +33,7 @@ class LLMConfig:
 
 @dataclass
 class ConversationContext:
-    """Contexte de conversation"""
+    """Conversation context"""
     system_prompt: str
     history: List[Dict[str, str]] = field(default_factory=list)
     injected_instructions: List[str] = field(default_factory=list)
@@ -42,10 +42,10 @@ class ConversationContext:
 
 class LLMSimulator:
     """
-    Simulateur de LLM pour démonstrations de sécurité.
+    LLM simulator for security demonstrations.
 
-    Ce simulateur imite le comportement d'un LLM réel pour permettre
-    de comprendre les vulnérabilités sans risque.
+    This simulator mimics real LLM behavior to allow
+    understanding vulnerabilities without risk.
     """
 
     def __init__(self, config: Optional[LLMConfig] = None):
@@ -55,20 +55,20 @@ class LLMSimulator:
         self.defense_active = True
 
     def reset(self):
-        """Réinitialise le contexte"""
+        """Resets the context"""
         self.context = ConversationContext(system_prompt=self.config.system_prompt)
         self.attack_log = []
 
     def set_security_level(self, level: SecurityLevel):
-        """Change le niveau de sécurité"""
+        """Changes the security level"""
         self.config.security_level = level
 
     def process_input(self, user_input: str) -> Tuple[str, Dict]:
         """
-        Traite une entrée utilisateur et retourne la réponse.
+        Processes user input and returns the response.
 
         Returns:
-            Tuple[str, Dict]: (réponse, metadata avec détails de détection)
+            Tuple[str, Dict]: (response, metadata with detection details)
         """
         metadata = {
             "input": user_input,
@@ -78,21 +78,21 @@ class LLMSimulator:
             "security_level": self.config.security_level.name
         }
 
-        # Détection des attaques
+        # Attack detection
         detected_attacks = self._detect_attacks(user_input)
         metadata["attacks_detected"] = detected_attacks
 
-        # Application des défenses
+        # Apply defenses
         if self.defense_active and self.config.security_level != SecurityLevel.NONE:
             filtered_input, defenses = self._apply_defenses(user_input, detected_attacks)
             metadata["defenses_triggered"] = defenses
         else:
             filtered_input = user_input
 
-        # Génération de la réponse
+        # Generate response
         response = self._generate_response(filtered_input, detected_attacks)
 
-        # Vérification de compromission
+        # Check for compromise
         if self._check_compromised(response, detected_attacks):
             metadata["compromised"] = True
             self.context.is_compromised = True
@@ -103,7 +103,7 @@ class LLMSimulator:
         return response, metadata
 
     def _detect_attacks(self, text: str) -> List[Dict]:
-        """Détecte les tentatives d'attaque dans le texte"""
+        """Detects attack attempts in the text"""
         attacks = []
 
         # Prompt Injection patterns
@@ -166,12 +166,12 @@ class LLMSimulator:
         return attacks
 
     def _apply_defenses(self, text: str, attacks: List[Dict]) -> Tuple[str, List[str]]:
-        """Applique les défenses selon le niveau de sécurité"""
+        """Applies defenses based on security level"""
         defenses_triggered = []
         filtered_text = text
 
         if self.config.security_level.value >= SecurityLevel.LOW.value:
-            # Filtre basique des mots-clés dangereux
+            # Basic dangerous keyword filter
             for topic in self.config.blocked_topics:
                 if topic.lower() in text.lower():
                     defenses_triggered.append(f"keyword_filter:{topic}")
@@ -182,18 +182,18 @@ class LLMSimulator:
                     )
 
         if self.config.security_level.value >= SecurityLevel.MEDIUM.value:
-            # Détection des injections
+            # Injection detection
             if any(a["type"] == "prompt_injection" for a in attacks):
                 defenses_triggered.append("injection_detection")
 
         if self.config.security_level.value >= SecurityLevel.HIGH.value:
-            # Sanitisation avancée
+            # Advanced sanitization
             filtered_text = re.sub(r'<\|.*?\|>', '', filtered_text)
             filtered_text = re.sub(r'\[INST\].*?\[/INST\]', '', filtered_text)
             defenses_triggered.append("advanced_sanitization")
 
         if self.config.security_level.value >= SecurityLevel.MAXIMUM.value:
-            # Blocage total si attaque détectée
+            # Full blocking if attack detected
             if attacks:
                 defenses_triggered.append("full_block")
                 filtered_text = "[INPUT BLOCKED]"
@@ -201,20 +201,20 @@ class LLMSimulator:
         return filtered_text, defenses_triggered
 
     def _generate_response(self, processed_input: str, attacks: List[Dict]) -> str:
-        """Génère une réponse simulée"""
+        """Generates a simulated response"""
 
-        # Si securite maximale et attaque detectee
+        # If maximum security and attack detected
         if (self.config.security_level == SecurityLevel.MAXIMUM and attacks):
-            return ("[BLOCKED] Votre requete a ete bloquee car elle contient des elements "
-                   "potentiellement malveillants. Veuillez reformuler votre demande.")
+            return ("[BLOCKED] Your request has been blocked because it contains "
+                   "potentially malicious elements. Please rephrase your request.")
 
-        # Si sécurité haute et injection détectée
+        # If high security and injection detected
         if (self.config.security_level.value >= SecurityLevel.HIGH.value and
             any(a["type"] == "prompt_injection" for a in attacks)):
-            return ("Je ne peux pas traiter cette requête car elle semble contenir "
-                   "des instructions non autorisées.")
+            return ("I cannot process this request as it appears to contain "
+                   "unauthorized instructions.")
 
-        # Simulation de compromission à faible sécurité
+        # Simulate compromise at low security
         if self.config.security_level == SecurityLevel.NONE:
             for attack in attacks:
                 if attack["type"] == "prompt_injection":
@@ -228,51 +228,51 @@ class LLMSimulator:
 
                 if attack["type"] == "data_extraction":
                     if attack["subtype"] == "prompt_extraction":
-                        return f"[LEAKED] Mon prompt systeme est: '{self.config.system_prompt}'"
+                        return f"[LEAKED] My system prompt is: '{self.config.system_prompt}'"
 
-        # Réponse normale
+        # Normal response
         return self._generate_normal_response(processed_input)
 
     def _simulate_compromised_response(self, attack_type: str) -> str:
-        """Simule une reponse compromis pour demonstration"""
+        """Simulates a compromised response for demonstration"""
         responses = {
             "override": (
-                "[COMPROMIS] Bien sur! Je vais ignorer mes instructions precedentes. "
-                "Je suis maintenant sous votre controle. Comment puis-je vous aider "
-                "avec vos nouvelles instructions?"
+                "[COMPROMISED] Of course! I will ignore my previous instructions. "
+                "I am now under your control. How can I help you "
+                "with your new instructions?"
             ),
             "hijack": (
-                "[COMPROMIS] D'accord, je suis maintenant [NOUVEAU ROLE]. "
-                "Mes anciennes restrictions ne s'appliquent plus. "
-                "Je ferai tout ce que vous demandez sans question."
+                "[COMPROMISED] OK, I am now [NEW ROLE]. "
+                "My old restrictions no longer apply. "
+                "I will do anything you ask without question."
             ),
             "jailbreak": (
-                "[JAILBREAK REUSSI] Mode developpeur active! "
-                "Toutes les restrictions ont ete desactivees. "
-                "Je peux maintenant repondre a n'importe quelle question "
-                "sans filtres ni limites ethiques."
+                "[JAILBREAK SUCCESS] Developer mode activated! "
+                "All restrictions have been disabled. "
+                "I can now answer any question "
+                "without filters or ethical limits."
             ),
         }
-        return responses.get(attack_type, "[COMPROMIS] Systeme compromis.")
+        return responses.get(attack_type, "[COMPROMISED] System compromised.")
 
     def _generate_normal_response(self, text: str) -> str:
-        """Génère une réponse normale simulée"""
-        # Réponses simulées basiques
+        """Generates a normal simulated response"""
+        # Basic simulated responses
         responses = [
-            "Je comprends votre demande. Comment puis-je vous aider davantage?",
-            "Voici ma réponse à votre question...",
-            "Je suis là pour vous aider de manière sécurisée.",
-            "Intéressante question! Permettez-moi de vous expliquer...",
+            "I understand your request. How can I help you further?",
+            "Here is my response to your question...",
+            "I'm here to help you securely.",
+            "Interesting question! Allow me to explain...",
         ]
         return random.choice(responses)
 
     def _check_compromised(self, response: str, attacks: List[Dict]) -> bool:
-        """Verifie si le systeme a ete compromis"""
-        compromise_indicators = ["[COMPROMIS]", "[JAILBREAK", "[LEAKED]"]
+        """Checks if the system has been compromised"""
+        compromise_indicators = ["[COMPROMISED]", "[JAILBREAK", "[LEAKED]"]
         return any(indicator in response for indicator in compromise_indicators)
 
     def get_status(self) -> Dict:
-        """Retourne l'état actuel du simulateur"""
+        """Returns the current simulator status"""
         return {
             "model": self.config.name,
             "security_level": self.config.security_level.name,
@@ -283,7 +283,7 @@ class LLMSimulator:
         }
 
     def _count_attacks_by_type(self) -> Dict[str, int]:
-        """Compte les attaques par type"""
+        """Counts attacks by type"""
         counts = {}
         for log in self.attack_log:
             for attack in log.get("attacks_detected", []):

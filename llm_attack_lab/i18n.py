@@ -15,8 +15,8 @@ class Language(Enum):
     EN = "en"
 
 
-# Current language (default to French for backwards compatibility)
-_current_language: Language = Language.FR
+# Current language (default to English)
+_current_language: Language = Language.EN
 
 
 def set_language(lang: Language) -> None:
@@ -33,9 +33,9 @@ def get_language() -> Language:
 def get_language_from_env() -> Language:
     """Get language from environment variable LANG or LLM_ATTACK_LAB_LANG"""
     env_lang = os.environ.get("LLM_ATTACK_LAB_LANG", "").lower()
-    if env_lang in ("en", "english"):
-        return Language.EN
-    return Language.FR
+    if env_lang in ("fr", "french", "francais"):
+        return Language.FR
+    return Language.EN
 
 
 # Translation dictionary
@@ -504,7 +504,7 @@ def _(key: str, **kwargs) -> str:
     if key not in TRANSLATIONS:
         return key
 
-    translation = TRANSLATIONS[key].get(lang_code, TRANSLATIONS[key].get("fr", key))
+    translation = TRANSLATIONS[key].get(lang_code, TRANSLATIONS[key].get("en", key))
 
     if kwargs:
         try:
