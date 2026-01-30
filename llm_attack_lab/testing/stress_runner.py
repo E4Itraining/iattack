@@ -744,6 +744,9 @@ def stream_stress_events():
     runner = get_stress_runner()
     subscriber_queue = runner.subscribe()
 
+    # Send immediate connected event to trigger client's onopen
+    yield f"data: {json.dumps({'type': 'connected', 'data': {'status': 'ready'}, 'timestamp': time.time()})}\n\n"
+
     try:
         while True:
             try:
