@@ -241,6 +241,25 @@ class MetricsCollector:
             "max": max(values),
         }
 
+    def _sum_counters_by_prefix(self, prefix: str) -> float:
+        """Sum all counters that start with the given prefix (for aggregating labeled metrics)"""
+        total = 0.0
+        with self._lock:
+            for key, value in self._counters.items():
+                # Match both exact key and keys with labels like "prefix{label=value}"
+                if key == prefix or key.startswith(f"{prefix}{{"):
+                    total += value
+        return total
+
+    def _combine_timers_by_prefix(self, prefix: str) -> List[float]:
+        """Combine all timer values that start with the given prefix"""
+        combined = []
+        with self._lock:
+            for key, values in self._timers.items():
+                if key == prefix or key.startswith(f"{prefix}{{"):
+                    combined.extend(values)
+        return combined
+
     def get_all_metrics(self) -> Dict:
         """Get all current metrics"""
         with self._lock:
@@ -253,10 +272,14 @@ class MetricsCollector:
             }
 
     def get_attack_summary(self) -> Dict:
-        """Get attack-specific summary"""
-        total = self.get_counter("attacks_total")
-        successful = self.get_counter("attacks_successful")
-        detected = self.get_counter("attacks_detected")
+        """Get attack-specific summary aggregated across all attack types"""
+        # Aggregate counters across all attack type labels
+        total = self._sum_counters_by_prefix("attacks_total")
+        successful = self._sum_counters_by_prefix("attacks_successful")
+        detected = self._sum_counters_by_prefix("attacks_detected")
+
+        # Combine duration timers across all attack types
+        all_durations = self._combine_timers_by_prefix("attack_duration")
 
         return {
             "total_attacks": int(total),
@@ -264,21 +287,26 @@ class MetricsCollector:
             "detected_attacks": int(detected),
             "success_rate": (successful / total * 100) if total > 0 else 0,
             "detection_rate": (detected / total * 100) if total > 0 else 0,
-            "attack_duration": self.get_timer_stats("attack_duration"),
+            "attack_duration": self._compute_stats(all_durations),
         }
 
     def get_defense_summary(self) -> Dict:
-        """Get defense-specific summary"""
-        total_actions = self.get_counter("defense_actions_total")
+        """Get defense-specific summary aggregated across all defense types"""
+        # Aggregate defense actions across all labels
+        total_actions = self._sum_counters_by_prefix("defense_actions_total")
+        # requests_blocked and requests_total don't use labels
         blocked = self.get_counter("requests_blocked")
         total_requests = self.get_counter("requests_total")
+
+        # Combine request latency timers
+        all_latencies = self._combine_timers_by_prefix("request_latency")
 
         return {
             "total_defense_actions": int(total_actions),
             "blocked_requests": int(blocked),
             "total_requests": int(total_requests),
             "block_rate": (blocked / total_requests * 100) if total_requests > 0 else 0,
-            "request_latency": self.get_timer_stats("request_latency"),
+            "request_latency": self._compute_stats(all_latencies),
         }
 
     def export_prometheus(self) -> str:
