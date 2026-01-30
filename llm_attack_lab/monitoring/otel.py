@@ -61,6 +61,48 @@ def _is_port_available(port: int, host: str = "0.0.0.0") -> bool:
         return False
 
 
+def _is_collector_reachable(endpoint: str, timeout: float = 2.0) -> bool:
+    """
+    Check if the OTLP collector is reachable.
+
+    Args:
+        endpoint: The collector endpoint in format 'host:port'
+        timeout: Connection timeout in seconds
+
+    Returns:
+        True if the collector is reachable, False otherwise
+    """
+    try:
+        # Parse host and port from endpoint
+        if ':' in endpoint:
+            host, port_str = endpoint.rsplit(':', 1)
+            port = int(port_str)
+        else:
+            host = endpoint
+            port = 4317  # Default OTLP gRPC port
+
+        # Attempt to connect
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.settimeout(timeout)
+            result = s.connect_ex((host, port))
+            return result == 0
+    except (OSError, ValueError, socket.timeout):
+        return False
+
+
+def _suppress_grpc_logging():
+    """Suppress verbose gRPC and OpenTelemetry exporter logging when collector is unavailable"""
+    # Suppress gRPC core logging
+    import os
+    os.environ.setdefault("GRPC_VERBOSITY", "ERROR")
+    os.environ.setdefault("GRPC_TRACE", "")
+
+    # Suppress OpenTelemetry exporter warnings
+    logging.getLogger("opentelemetry.exporter.otlp").setLevel(logging.ERROR)
+    logging.getLogger("opentelemetry.exporter.otlp.proto.grpc").setLevel(logging.ERROR)
+    logging.getLogger("grpc").setLevel(logging.ERROR)
+
+
 class OTelConfig:
     """Configuration for OpenTelemetry"""
 
@@ -76,6 +118,11 @@ class OTelConfig:
         self.prometheus_port_range = int(os.getenv("PROMETHEUS_PORT_RANGE", "10"))
         self.enable_tracing = os.getenv("OTEL_ENABLE_TRACING", "true").lower() == "true"
         self.enable_metrics = os.getenv("OTEL_ENABLE_METRICS", "true").lower() == "true"
+
+        # OTLP export control - can be explicitly disabled to avoid connection errors
+        # "auto" means check if collector is reachable before enabling
+        self._otlp_enabled_raw = os.getenv("OTEL_EXPORTER_OTLP_ENABLED", "auto").lower()
+        self.collector_check_timeout = float(os.getenv("OTEL_COLLECTOR_CHECK_TIMEOUT", "2.0"))
 
         # Retry and timeout configuration
         self.otlp_timeout_seconds = int(os.getenv("OTEL_EXPORTER_OTLP_TIMEOUT", "30"))
@@ -107,6 +154,31 @@ class OTelConfig:
             return endpoint[8:]  # Remove 'https://'
         return endpoint
 
+    def is_otlp_enabled(self) -> bool:
+        """
+        Determine if OTLP export should be enabled.
+
+        Returns:
+            True if OTLP export is enabled and collector is reachable,
+            False otherwise.
+        """
+        if self._otlp_enabled_raw == "false":
+            return False
+        elif self._otlp_enabled_raw == "true":
+            return True
+        else:  # "auto" - check if collector is reachable
+            is_reachable = _is_collector_reachable(
+                self.otlp_endpoint,
+                timeout=self.collector_check_timeout
+            )
+            if not is_reachable:
+                logger.info(
+                    f"OTLP collector at {self.otlp_endpoint} is not reachable. "
+                    "OTLP export disabled. Set OTEL_EXPORTER_OTLP_ENABLED=true to force enable."
+                )
+                _suppress_grpc_logging()
+            return is_reachable
+
 
 class OTelManager:
     """
@@ -124,6 +196,7 @@ class OTelManager:
         self._meter = None
         self._initialized = False
         self._prometheus_port_actual: Optional[int] = None
+        self._otlp_enabled: Optional[bool] = None  # Cached result of collector check
 
         # Prometheus metrics (local)
         self._prom_metrics: Dict[str, Any] = {}
@@ -138,6 +211,9 @@ class OTelManager:
             self._initialize_prometheus_only()
             return False
 
+        # Check if OTLP collector is available (cache the result)
+        self._otlp_enabled = self.config.is_otlp_enabled()
+
         try:
             # Create resource
             resource = Resource.create({
@@ -146,19 +222,22 @@ class OTelManager:
                 "deployment.environment": os.getenv("ENVIRONMENT", "development"),
             })
 
-            # Initialize tracing
+            # Initialize tracing (with OTLP export if collector is available)
             if self.config.enable_tracing:
                 self._init_tracing(resource)
 
-            # Initialize metrics
+            # Initialize metrics (with OTLP export if collector is available)
             if self.config.enable_metrics:
                 self._init_metrics(resource)
 
-            # Start Prometheus endpoint
+            # Start Prometheus endpoint (always available as fallback)
             self._init_prometheus()
 
             self._initialized = True
-            logger.info(f"OpenTelemetry initialized for {self.config.service_name}")
+            if self._otlp_enabled:
+                logger.info(f"OpenTelemetry initialized for {self.config.service_name} with OTLP export")
+            else:
+                logger.info(f"OpenTelemetry initialized for {self.config.service_name} (Prometheus-only mode)")
             return True
 
         except Exception as e:
@@ -170,56 +249,63 @@ class OTelManager:
         """Initialize tracing provider with retry configuration"""
         tracer_provider = TracerProvider(resource=resource)
 
-        try:
-            # Configure OTLP exporter with timeout
-            otlp_exporter = OTLPSpanExporter(
-                endpoint=self.config.otlp_endpoint,
-                insecure=True,
-                timeout=self.config.otlp_timeout_seconds,
-            )
+        # Only configure OTLP exporter if collector is available
+        if self._otlp_enabled:
+            try:
+                # Configure OTLP exporter with timeout
+                otlp_exporter = OTLPSpanExporter(
+                    endpoint=self.config.otlp_endpoint,
+                    insecure=True,
+                    timeout=self.config.otlp_timeout_seconds,
+                )
 
-            # Configure BatchSpanProcessor with retry-friendly settings
-            span_processor = BatchSpanProcessor(
-                otlp_exporter,
-                max_queue_size=self.config.max_queue_size,
-                max_export_batch_size=self.config.max_export_batch_size,
-                schedule_delay_millis=self.config.schedule_delay_millis,
-                export_timeout_millis=self.config.export_timeout_millis,
-            )
-            tracer_provider.add_span_processor(span_processor)
-            logger.info(
-                f"OTLP trace exporter configured: endpoint={self.config.otlp_endpoint}, "
-                f"timeout={self.config.otlp_timeout_seconds}s, queue_size={self.config.max_queue_size}"
-            )
-        except Exception as e:
-            logger.warning(f"Could not connect to OTLP endpoint for tracing: {e}")
+                # Configure BatchSpanProcessor with retry-friendly settings
+                span_processor = BatchSpanProcessor(
+                    otlp_exporter,
+                    max_queue_size=self.config.max_queue_size,
+                    max_export_batch_size=self.config.max_export_batch_size,
+                    schedule_delay_millis=self.config.schedule_delay_millis,
+                    export_timeout_millis=self.config.export_timeout_millis,
+                )
+                tracer_provider.add_span_processor(span_processor)
+                logger.info(
+                    f"OTLP trace exporter configured: endpoint={self.config.otlp_endpoint}, "
+                    f"timeout={self.config.otlp_timeout_seconds}s, queue_size={self.config.max_queue_size}"
+                )
+            except Exception as e:
+                logger.warning(f"Could not connect to OTLP endpoint for tracing: {e}")
 
         trace.set_tracer_provider(tracer_provider)
         self._tracer = trace.get_tracer(self.config.service_name)
 
     def _init_metrics(self, resource):
         """Initialize metrics provider with retry configuration"""
-        try:
-            # Configure OTLP metric exporter with timeout
-            otlp_metric_exporter = OTLPMetricExporter(
-                endpoint=self.config.otlp_endpoint,
-                insecure=True,
-                timeout=self.config.otlp_timeout_seconds,
-            )
+        # Only configure OTLP exporter if collector is available
+        if self._otlp_enabled:
+            try:
+                # Configure OTLP metric exporter with timeout
+                otlp_metric_exporter = OTLPMetricExporter(
+                    endpoint=self.config.otlp_endpoint,
+                    insecure=True,
+                    timeout=self.config.otlp_timeout_seconds,
+                )
 
-            # Configure PeriodicExportingMetricReader with retry-friendly settings
-            metric_reader = PeriodicExportingMetricReader(
-                otlp_metric_exporter,
-                export_interval_millis=self.config.metrics_export_interval_millis,
-                export_timeout_millis=self.config.export_timeout_millis,
-            )
-            meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
-            logger.info(
-                f"OTLP metric exporter configured: endpoint={self.config.otlp_endpoint}, "
-                f"timeout={self.config.otlp_timeout_seconds}s, interval={self.config.metrics_export_interval_millis}ms"
-            )
-        except Exception as e:
-            logger.warning(f"Could not create OTLP metric exporter: {e}")
+                # Configure PeriodicExportingMetricReader with retry-friendly settings
+                metric_reader = PeriodicExportingMetricReader(
+                    otlp_metric_exporter,
+                    export_interval_millis=self.config.metrics_export_interval_millis,
+                    export_timeout_millis=self.config.export_timeout_millis,
+                )
+                meter_provider = MeterProvider(resource=resource, metric_readers=[metric_reader])
+                logger.info(
+                    f"OTLP metric exporter configured: endpoint={self.config.otlp_endpoint}, "
+                    f"timeout={self.config.otlp_timeout_seconds}s, interval={self.config.metrics_export_interval_millis}ms"
+                )
+            except Exception as e:
+                logger.warning(f"Could not create OTLP metric exporter: {e}")
+                meter_provider = MeterProvider(resource=resource)
+        else:
+            # No OTLP export - create MeterProvider without exporters
             meter_provider = MeterProvider(resource=resource)
 
         metrics.set_meter_provider(meter_provider)
@@ -395,6 +481,11 @@ class OTelManager:
     def prometheus_port(self) -> Optional[int]:
         """Get the actual Prometheus port in use (may differ from config if port was auto-assigned)"""
         return self._prometheus_port_actual
+
+    @property
+    def otlp_enabled(self) -> bool:
+        """Check if OTLP export is enabled and collector is reachable"""
+        return self._otlp_enabled or False
 
     @contextmanager
     def trace_span(self, name: str, attributes: Optional[Dict[str, Any]] = None):
