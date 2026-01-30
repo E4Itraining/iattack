@@ -322,9 +322,9 @@ def get_attack_type_stats():
     stats = []
 
     for attack_type in attack_types:
-        total_key = f'attacks_total{{attack_type={attack_type}}}'
-        success_key = f'attacks_successful{{attack_type={attack_type}}}'
-        detected_key = f'attacks_detected{{attack_type={attack_type}}}'
+        total_key = f'attacks_total{{attack_type="{attack_type}"}}'
+        success_key = f'attacks_successful{{attack_type="{attack_type}"}}'
+        detected_key = f'attacks_detected{{attack_type="{attack_type}"}}'
 
         total = counters.get(total_key, 0)
         successful = counters.get(success_key, 0)

@@ -226,7 +226,7 @@ class MetricsCollector:
         """Create a unique key for a metric with labels"""
         if not labels:
             return name
-        label_str = ",".join(f"{k}={v}" for k, v in sorted(labels.items()))
+        label_str = ",".join(f'{k}="{v}"' for k, v in sorted(labels.items()))
         return f"{name}{{{label_str}}}"
 
     def _compute_stats(self, values: List[float]) -> Dict:
