@@ -14,6 +14,7 @@ from datetime import datetime
 from dataclasses import dataclass
 
 from .security_metrics import get_security_metrics, SecurityMetricsCollector
+from .metrics import get_metrics_collector
 
 logger = logging.getLogger(__name__)
 
@@ -60,6 +61,7 @@ class SecurityMetricsSimulator:
     def __init__(self, config: Optional[SimulationConfig] = None):
         self.config = config or SimulationConfig()
         self.metrics = get_security_metrics()
+        self.local_metrics = get_metrics_collector()  # For web dashboard
         self._running = False
         self._thread: Optional[threading.Thread] = None
         self._lock = threading.Lock()
@@ -232,10 +234,25 @@ class SecurityMetricsSimulator:
                     pattern=pattern
                 )
 
+                # Record to local metrics for web dashboard
+                attack_duration = random.uniform(0.01, 0.5)
+                self.local_metrics.record_attack(
+                    attack_type=attack_type,
+                    success=success,
+                    detected=detected,
+                    duration=attack_duration
+                )
+
                 # If detected and blocked
                 if detected and not success:
                     defense = random.choice(self._defense_types)
                     self.metrics.record_blocked_attack(attack_type, defense)
+                    # Record defense action to local metrics
+                    self.local_metrics.record_defense_action(
+                        defense_type=defense,
+                        action="blocked",
+                        threat_level="high" if self._in_attack_wave else "medium"
+                    )
 
             # Update success rate with some variation
             base_success = getattr(self.config, f"{attack_type}_success", 15.0)
@@ -374,7 +391,8 @@ class SecurityMetricsSimulator:
             user_id = f"user_{random.randint(1, 20)}"
 
             # Some users make more queries during attacks
-            if self._in_attack_wave and random.random() < 0.3:
+            is_suspicious = self._in_attack_wave and random.random() < 0.3
+            if is_suspicious:
                 user_id = f"suspicious_{random.randint(1, 3)}"
 
             self.metrics.record_api_query(
@@ -382,6 +400,11 @@ class SecurityMetricsSimulator:
                 ip_address=f"192.168.1.{random.randint(1, 254)}",
                 endpoint=random.choice(["/predict", "/chat", "/analyze", "/classify"])
             )
+
+            # Record to local metrics for web dashboard
+            request_duration = random.uniform(0.01, 0.2)
+            blocked = is_suspicious and random.random() < 0.7  # 70% chance to block suspicious
+            self.local_metrics.record_request(duration=request_duration, blocked=blocked)
 
         # Session risk
         session_risk = 20 + random.gauss(0, 10) * intensity
