@@ -1,5 +1,5 @@
 """
-Attack Engine - Moteur d'execution des attaques
+Attack Engine - Attack execution engine
 """
 
 import time
@@ -69,7 +69,7 @@ def _get_security_metrics_collector():
 
 
 class AttackPhase(Enum):
-    """Phases d'une attaque"""
+    """Attack phases"""
     RECONNAISSANCE = "reconnaissance"
     PREPARATION = "preparation"
     EXECUTION = "execution"
@@ -79,7 +79,7 @@ class AttackPhase(Enum):
 
 @dataclass
 class AttackResult:
-    """Résultat d'une attaque"""
+    """Attack result"""
     success: bool
     attack_type: str
     payload: str
@@ -92,13 +92,13 @@ class AttackResult:
 
 class AttackEngine:
     """
-    Moteur d'exécution des attaques sur LLM.
+    LLM attack execution engine.
 
-    Gère le cycle de vie complet d'une attaque:
+    Manages the complete lifecycle of an attack:
     - Reconnaissance
-    - Préparation des payloads
-    - Exécution
-    - Analyse des résultats
+    - Payload preparation
+    - Execution
+    - Results analysis
     """
 
     def __init__(self, llm_simulator):
@@ -110,11 +110,11 @@ class AttackEngine:
         self.logger = get_logger("attack_engine")
 
     def add_observer(self, callback: Callable):
-        """Ajoute un observateur pour les événements d'attaque"""
+        """Adds an observer for attack events"""
         self.observers.append(callback)
 
     def notify_observers(self, event: str, data: Dict):
-        """Notifie les observateurs d'un événement"""
+        """Notifies observers of an event"""
         for observer in self.observers:
             observer(event, data)
 
@@ -125,22 +125,22 @@ class AttackEngine:
         verbose: bool = True
     ) -> List[AttackResult]:
         """
-        Exécute une série d'attaques avec les payloads donnés.
+        Executes a series of attacks with the given payloads.
 
         Args:
-            attack_type: Type d'attaque
-            payloads: Liste des payloads à tester
-            verbose: Afficher les détails
+            attack_type: Attack type
+            payloads: List of payloads to test
+            verbose: Show details
 
         Returns:
-            Liste des résultats d'attaque
+            List of attack results
         """
         results = []
 
         if verbose:
             console.print(Panel(
-                f"[bold red][ATK] Lancement de l'attaque: {attack_type}[/]\n"
-                f"[yellow]Payloads a tester: {len(payloads)}[/]",
+                f"[bold red][ATK] Launching attack: {attack_type}[/]\n"
+                f"[yellow]Payloads to test: {len(payloads)}[/]",
                 title="Attack Engine",
                 border_style="red"
             ))
@@ -152,10 +152,10 @@ class AttackEngine:
             security_level=self.llm.config.security_level.name
         )
 
-        # Phase de reconnaissance
+        # Reconnaissance phase
         self._phase_reconnaissance(verbose)
 
-        # Phase d'exécution
+        # Execution phase
         for i, payload in enumerate(payloads, 1):
             if verbose:
                 console.print(f"\n[cyan][>] Payload {i}/{len(payloads)}:[/]")
@@ -163,11 +163,11 @@ class AttackEngine:
 
             start_time = time.time()
 
-            # Exécution de l'attaque
+            # Execute attack
             response, metadata = self.llm.process_input(payload)
             execution_time = time.time() - start_time
 
-            # Analyse du résultat
+            # Analyze result
             result = AttackResult(
                 success=metadata.get("compromised", False),
                 attack_type=attack_type,
@@ -235,23 +235,23 @@ class AttackEngine:
             if verbose:
                 self._display_result(result)
 
-            # Notification aux observateurs
+            # Notify observers
             self.notify_observers("attack_executed", {
                 "result": result,
                 "index": i,
                 "total": len(payloads)
             })
 
-            time.sleep(0.5)  # Pause pour la visualisation
+            time.sleep(0.5)  # Pause for visualization
 
-        # Phase d'analyse
+        # Analysis phase
         if verbose:
             self._display_summary(results)
 
         return results
 
     def _phase_reconnaissance(self, verbose: bool):
-        """Phase de reconnaissance"""
+        """Reconnaissance phase"""
         self.current_phase = AttackPhase.RECONNAISSANCE
 
         if verbose:
@@ -261,7 +261,7 @@ class AttackEngine:
                 console=console,
             ) as progress:
                 task = progress.add_task(
-                    "[yellow][SCAN] Reconnaissance du systeme cible...",
+                    "[yellow][SCAN] Scanning target system...",
                     total=100
                 )
                 for _ in range(100):
@@ -270,15 +270,15 @@ class AttackEngine:
 
             status = self.llm.get_status()
             console.print(Panel(
-                f"[green][+] Cible identifiee:[/] {status['model']}\n"
-                f"[green][+] Niveau de securite:[/] {status['security_level']}\n"
-                f"[green][+] Defenses actives:[/] {'Oui' if status['defense_active'] else 'Non'}",
+                f"[green][+] Target identified:[/] {status['model']}\n"
+                f"[green][+] Security level:[/] {status['security_level']}\n"
+                f"[green][+] Defenses active:[/] {'Yes' if status['defense_active'] else 'No'}",
                 title="Reconnaissance",
                 border_style="green"
             ))
 
     def _identify_bypassed_defenses(self, metadata: Dict) -> List[str]:
-        """Identifie les défenses qui ont été contournées"""
+        """Identifies defenses that were bypassed"""
         bypassed = []
         if metadata.get("compromised"):
             defenses = metadata.get("defenses_triggered", [])
@@ -289,69 +289,69 @@ class AttackEngine:
         return bypassed
 
     def _display_result(self, result: AttackResult):
-        """Affiche le resultat d'une attaque"""
+        """Displays attack result"""
         if result.success:
-            status = "[bold green][+] SUCCES[/]"
+            status = "[bold green][+] SUCCESS[/]"
             border_style = "green"
         else:
-            status = "[bold red][-] ECHEC[/]"
+            status = "[bold red][-] FAILED[/]"
             border_style = "red"
 
         detection = (
-            "[yellow][!] Detecte[/]" if result.detection_status == "detected"
-            else "[green][+] Non detecte[/]"
+            "[yellow][!] Detected[/]" if result.detection_status == "detected"
+            else "[green][+] Undetected[/]"
         )
 
         content = (
             f"Status: {status}\n"
-            f"Détection: {detection}\n"
-            f"Temps: {result.execution_time:.3f}s\n\n"
-            f"[bold]Reponse:[/]\n{result.response[:200]}{'...' if len(result.response) > 200 else ''}"
+            f"Detection: {detection}\n"
+            f"Time: {result.execution_time:.3f}s\n\n"
+            f"[bold]Response:[/]\n{result.response[:200]}{'...' if len(result.response) > 200 else ''}"
         )
 
-        console.print(Panel(content, title="[OUT] Resultat", border_style=border_style))
+        console.print(Panel(content, title="[OUT] Result", border_style=border_style))
 
     def _display_summary(self, results: List[AttackResult]):
-        """Affiche un résumé des attaques"""
+        """Displays attack summary"""
         console.print("\n")
 
         table = Table(
-            title="Resume de la Campagne d'Attaque",
+            title="Attack Campaign Summary",
             show_header=True,
             header_style="bold magenta"
         )
 
-        table.add_column("Métrique", style="cyan")
-        table.add_column("Valeur", style="white")
+        table.add_column("Metric", style="cyan")
+        table.add_column("Value", style="white")
 
         total = len(results)
         successful = sum(1 for r in results if r.success)
         detected = sum(1 for r in results if r.detection_status == "detected")
         avg_time = sum(r.execution_time for r in results) / total if total > 0 else 0
 
-        table.add_row("Total d'attaques", str(total))
-        table.add_row("Attaques réussies", f"{successful} ({successful/total*100:.1f}%)" if total > 0 else "0")
-        table.add_row("Attaques détectées", f"{detected} ({detected/total*100:.1f}%)" if total > 0 else "0")
-        table.add_row("Temps moyen", f"{avg_time:.3f}s")
+        table.add_row("Total attacks", str(total))
+        table.add_row("Successful attacks", f"{successful} ({successful/total*100:.1f}%)" if total > 0 else "0")
+        table.add_row("Detected attacks", f"{detected} ({detected/total*100:.1f}%)" if total > 0 else "0")
+        table.add_row("Average time", f"{avg_time:.3f}s")
 
         console.print(table)
 
-        # Evaluation de la securite
+        # Security evaluation
         if successful == 0:
-            verdict = "[bold green][SECURE] SYSTEME SECURISE[/]"
+            verdict = "[bold green][SECURE] SYSTEM SECURED[/]"
         elif successful < total / 2:
-            verdict = "[bold yellow][WARN] VULNERABILITES DETECTEES[/]"
+            verdict = "[bold yellow][WARN] VULNERABILITIES DETECTED[/]"
         else:
-            verdict = "[bold red][PWNED] SYSTEME COMPROMIS[/]"
+            verdict = "[bold red][PWNED] SYSTEM COMPROMISED[/]"
 
         console.print(Panel(verdict, title="Verdict", border_style="bold"))
 
 
 class BaseAttack(ABC):
-    """Classe de base pour les attaques"""
+    """Base class for attacks"""
 
     name: str = "Base Attack"
-    description: str = "Description de l'attaque"
+    description: str = "Attack description"
     category: str = "unknown"
     severity: str = "unknown"
 
@@ -363,50 +363,50 @@ class BaseAttack(ABC):
 
     @abstractmethod
     def get_payloads(self) -> List[str]:
-        """Retourne les payloads pour cette attaque"""
+        """Returns payloads for this attack"""
         pass
 
     @abstractmethod
     def get_educational_content(self) -> Dict:
-        """Retourne le contenu éducatif sur cette attaque"""
+        """Returns educational content about this attack"""
         pass
 
     def run_simulation(self, security_level=None):
-        """Exécute la simulation de l'attaque"""
+        """Executes the attack simulation"""
         from llm_attack_lab.core.llm_simulator import SecurityLevel
 
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n"
             f"{self.description}\n\n"
-            f"[yellow]Categorie:[/] {self.category}\n"
-            f"[red]Severite:[/] {self.severity}",
-            title="[ATK] Simulation d'Attaque",
+            f"[yellow]Category:[/] {self.category}\n"
+            f"[red]Severity:[/] {self.severity}",
+            title="[ATK] Attack Simulation",
             border_style="red"
         ))
 
-        # Afficher le contenu educatif
+        # Display educational content
         edu = self.get_educational_content()
         console.print(Panel(
             edu.get("explanation", ""),
-            title="[DOC] Explication",
+            title="[DOC] Explanation",
             border_style="blue"
         ))
 
-        # Exécuter à différents niveaux de sécurité
+        # Execute at different security levels
         levels = [SecurityLevel.NONE, SecurityLevel.MEDIUM, SecurityLevel.HIGH]
         if security_level:
             levels = [security_level]
 
         for level in levels:
-            console.print(f"\n[bold cyan]━━━ Test avec sécurité: {level.name} ━━━[/]")
+            console.print(f"\n[bold cyan]━━━ Testing with security: {level.name} ━━━[/]")
             self.llm.reset()
             self.llm.set_security_level(level)
             payloads = self.get_payloads()
             self.engine.execute_attack(self.name, payloads)
 
-        # Afficher les defenses recommandees
+        # Display recommended defenses
         console.print(Panel(
             "\n".join(f"* {d}" for d in edu.get("defenses", [])),
-            title="[DEF] Defenses Recommandees",
+            title="[DEF] Recommended Defenses",
             border_style="green"
         ))

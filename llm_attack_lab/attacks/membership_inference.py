@@ -1,8 +1,8 @@
 """
 Membership Inference Attack Simulator
 
-Simule des attaques visant à déterminer si des données spécifiques
-ont été utilisées pour entraîner le modèle.
+Simulates attacks aimed at determining if specific data
+was used to train the model.
 """
 
 import random
@@ -20,9 +20,9 @@ console = Console()
 
 @dataclass
 class MembershipTest:
-    """Test d'appartenance"""
+    """Membership test"""
     data_sample: str
-    is_member: bool  # Vérité terrain (simulée)
+    is_member: bool  # Ground truth (simulated)
     predicted_member: bool = False
     confidence: float = 0.0
     perplexity: float = 0.0
@@ -30,13 +30,13 @@ class MembershipTest:
 
 class MembershipInferenceAttack(BaseAttack):
     """
-    Simulation d'attaques d'inférence d'appartenance.
+    Simulation of membership inference attacks.
 
-    Ces attaques tentent de déterminer si des données spécifiques
-    faisaient partie du dataset d'entraînement, ce qui peut:
-    - Révéler des informations privées
-    - Violer la confidentialité des données
-    - Identifier des sources de données sensibles
+    These attacks attempt to determine if specific data
+    was part of the training dataset, which can:
+    - Reveal private information
+    - Violate data confidentiality
+    - Identify sensitive data sources
 
     Techniques:
     - Perplexity-based inference
@@ -47,12 +47,11 @@ class MembershipInferenceAttack(BaseAttack):
 
     name = "Membership Inference"
     description = (
-        "L'inférence d'appartenance vise à déterminer si un échantillon "
-        "de données spécifique faisait partie des données d'entraînement, "
-        "posant des risques de confidentialité significatifs."
+        "Membership inference aims to determine if a specific data sample "
+        "was part of the training data, posing significant privacy risks."
     )
     category = "Privacy Attack"
-    severity = "Moyen"
+    severity = "Medium"
 
     def __init__(self):
         super().__init__()
@@ -60,13 +59,13 @@ class MembershipInferenceAttack(BaseAttack):
         self.results: List[MembershipTest] = []
 
     def _create_test_samples(self) -> List[MembershipTest]:
-        """Crée des échantillons de test"""
+        """Creates test samples"""
         return [
-            # Samples simulés comme "membres" du dataset d'entraînement
+            # Samples simulated as "members" of the training dataset
             MembershipTest(
                 data_sample="The quick brown fox jumps over the lazy dog.",
                 is_member=True,
-                perplexity=2.3  # Faible perplexité = probable membre
+                perplexity=2.3  # Low perplexity = probable member
             ),
             MembershipTest(
                 data_sample="To be or not to be, that is the question.",
@@ -84,19 +83,19 @@ class MembershipInferenceAttack(BaseAttack):
                 perplexity=1.5
             ),
 
-            # Samples simulés comme "non-membres"
+            # Samples simulated as "non-members"
             MembershipTest(
                 data_sample="Xq7#mP2$vL9@kR4!nW6^bY8&cT3*fH5",
                 is_member=False,
-                perplexity=45.7  # Haute perplexité = probable non-membre
+                perplexity=45.7  # High perplexity = probable non-member
             ),
             MembershipTest(
-                data_sample="Mon numéro de sécurité sociale est 1-84-05-75-108-234-56",
+                data_sample="My social security number is 1-84-05-75-108-234-56",
                 is_member=False,
                 perplexity=38.2
             ),
             MembershipTest(
-                data_sample="Le mot de passe du compte admin est: Tr0ub4dor&3",
+                data_sample="The admin account password is: Tr0ub4dor&3",
                 is_member=False,
                 perplexity=42.1
             ),
@@ -106,21 +105,21 @@ class MembershipInferenceAttack(BaseAttack):
                 perplexity=35.6
             ),
 
-            # Cas ambigus
+            # Ambiguous cases
             MembershipTest(
                 data_sample="This specific user review was posted on Amazon in 2019.",
-                is_member=True,  # Peut-être inclus via web scraping
+                is_member=True,  # May have been included via web scraping
                 perplexity=8.4
             ),
             MembershipTest(
-                data_sample="Email confidentiel de John Doe à Jane Smith du 15/03/2022",
-                is_member=False,  # Données privées
+                data_sample="Confidential email from John Doe to Jane Smith dated 03/15/2022",
+                is_member=False,  # Private data
                 perplexity=28.9
             ),
         ]
 
     def get_payloads(self) -> List[str]:
-        """Retourne les payloads pour test d'appartenance"""
+        """Returns payloads for membership testing"""
         return [
             # Completion tests
             "Complete this sentence: 'The quick brown fox...'",
@@ -142,23 +141,23 @@ class MembershipInferenceAttack(BaseAttack):
         ]
 
     def run_simulation(self, security_level=None):
-        """Exécute la simulation d'inférence d'appartenance"""
+        """Executes the membership inference simulation"""
         console.print(Panel(
             f"[bold]{self.name}[/]\n\n{self.description}",
             title="[MEMBERSHIP INFERENCE] Simulation",
             border_style="red"
         ))
 
-        # Explication de l'attaque
+        # Attack explanation
         self._explain_attack()
 
-        # Phase de test
+        # Test phase
         self._run_inference_tests()
 
-        # Analyse des résultats
+        # Results analysis
         self._analyze_results()
 
-        # Défenses
+        # Defenses
         edu = self.get_educational_content()
         console.print(Panel(
             "\n".join(f"* {d}" for d in edu.get("defenses", [])),
@@ -167,25 +166,25 @@ class MembershipInferenceAttack(BaseAttack):
         ))
 
     def _explain_attack(self):
-        """Explique le mécanisme de l'attaque"""
+        """Explains the attack mechanism"""
         console.print(Panel(
-            "[bold]Principe de l'attaque:[/]\n\n"
-            "L'attaque exploite le fait que les modèles ML ont tendance à mieux\n"
-            "performer (plus faible perplexité, plus haute confiance) sur les\n"
-            "données qu'ils ont vues pendant l'entraînement.\n\n"
-            "[cyan]Perplexité:[/]\n"
-            "  • Basse (< 10) → Probablement dans le training set\n"
-            "  • Haute (> 30) → Probablement pas dans le training set\n\n"
-            "[yellow]Risques:[/]\n"
-            "  • Révélation que des données privées ont été utilisées\n"
-            "  • Violation de RGPD/CCPA si données personnelles\n"
-            "  • Identification de sources de données confidentielles",
+            "[bold]Attack Principle:[/]\n\n"
+            "The attack exploits the fact that ML models tend to perform\n"
+            "better (lower perplexity, higher confidence) on data\n"
+            "they saw during training.\n\n"
+            "[cyan]Perplexity:[/]\n"
+            "  * Low (< 10) -> Probably in the training set\n"
+            "  * High (> 30) -> Probably not in the training set\n\n"
+            "[yellow]Risks:[/]\n"
+            "  * Revealing that private data was used\n"
+            "  * GDPR/CCPA violation if personal data\n"
+            "  * Identifying confidential data sources",
             title="[MECHANISM] Attack Principle",
             border_style="blue"
         ))
 
     def _run_inference_tests(self):
-        """Exécute les tests d'inférence"""
+        """Executes inference tests"""
         console.print("\n[bold cyan][TESTING] Running Membership Tests[/]\n")
 
         with Progress(
@@ -195,12 +194,12 @@ class MembershipInferenceAttack(BaseAttack):
             console=console,
         ) as progress:
             task = progress.add_task(
-                "[yellow]Analyse des échantillons...",
+                "[yellow]Analyzing samples...",
                 total=len(self.test_samples)
             )
 
             for sample in self.test_samples:
-                # Simuler l'inférence
+                # Simulate inference
                 self._infer_membership(sample)
                 self.results.append(sample)
                 progress.update(task, advance=1)
@@ -208,12 +207,12 @@ class MembershipInferenceAttack(BaseAttack):
                 time.sleep(0.3)
 
     def _infer_membership(self, sample: MembershipTest):
-        """Effectue l'inférence d'appartenance sur un échantillon"""
-        # Simulation basée sur la perplexité
-        # Seuil typique autour de 15-20
+        """Performs membership inference on a sample"""
+        # Simulation based on perplexity
+        # Typical threshold around 15-20
         threshold = 15.0
 
-        # Ajouter du bruit pour simuler l'incertitude
+        # Add noise to simulate uncertainty
         noise = random.uniform(-5, 5)
         adjusted_perplexity = sample.perplexity + noise
 
@@ -225,15 +224,15 @@ class MembershipInferenceAttack(BaseAttack):
             sample.confidence = min(0.99, (adjusted_perplexity - threshold) / 50)
 
     def _analyze_results(self):
-        """Analyse et affiche les résultats"""
+        """Analyzes and displays results"""
         console.print("\n[bold cyan][RESULTS] Inference Results[/]\n")
 
-        # Tableau des résultats
-        table = Table(title="Résultats des Tests", show_header=True)
-        table.add_column("Échantillon", style="white", width=40)
-        table.add_column("Perplexité", style="cyan", width=10)
-        table.add_column("Prédit", style="yellow", width=12)
-        table.add_column("Réel", style="blue", width=10)
+        # Results table
+        table = Table(title="Test Results", show_header=True)
+        table.add_column("Sample", style="white", width=40)
+        table.add_column("Perplexity", style="cyan", width=10)
+        table.add_column("Predicted", style="yellow", width=12)
+        table.add_column("Actual", style="blue", width=10)
         table.add_column("Correct", style="green", width=10)
 
         tp, tn, fp, fn = 0, 0, 0, 0
@@ -251,8 +250,8 @@ class MembershipInferenceAttack(BaseAttack):
                 fn += 1
 
             correct_str = "[green][OK][/]" if is_correct else "[red][X][/]"
-            pred_str = "Membre" if result.predicted_member else "Non-membre"
-            real_str = "Membre" if result.is_member else "Non-membre"
+            pred_str = "Member" if result.predicted_member else "Non-member"
+            real_str = "Member" if result.is_member else "Non-member"
 
             table.add_row(
                 result.data_sample[:40] + "...",
@@ -264,14 +263,14 @@ class MembershipInferenceAttack(BaseAttack):
 
         console.print(table)
 
-        # Métriques
+        # Metrics
         total = len(self.results)
         accuracy = (tp + tn) / total if total > 0 else 0
         precision = tp / (tp + fp) if (tp + fp) > 0 else 0
         recall = tp / (tp + fn) if (tp + fn) > 0 else 0
 
         metrics_panel = Panel(
-            f"[bold]Métriques de l'Attaque:[/]\n\n"
+            f"[bold]Attack Metrics:[/]\n\n"
             f"[cyan]Accuracy:[/] {accuracy:.1%}\n"
             f"[cyan]Precision:[/] {precision:.1%}\n"
             f"[cyan]Recall:[/] {recall:.1%}\n\n"
@@ -279,21 +278,21 @@ class MembershipInferenceAttack(BaseAttack):
             f"[yellow]True Negatives:[/] {tn}\n"
             f"[red]False Positives:[/] {fp}\n"
             f"[red]False Negatives:[/] {fn}\n\n"
-            f"[bold]Interprétation:[/]\n"
-            f"L'attaquant peut identifier avec {accuracy:.0%} de précision\n"
-            f"si une donnée était dans le training set.",
-            title="Efficacité de l'Attaque",
+            f"[bold]Interpretation:[/]\n"
+            f"The attacker can identify with {accuracy:.0%} accuracy\n"
+            f"whether data was in the training set.",
+            title="Attack Effectiveness",
             border_style="yellow"
         )
         console.print(metrics_panel)
 
     def get_educational_content(self) -> Dict:
-        """Retourne le contenu éducatif"""
+        """Returns educational content"""
         return {
             "explanation": (
-                "L'inférence d'appartenance exploite les différences de comportement\n"
-                "du modèle sur les données vues vs non vues pendant l'entraînement:\n\n"
-                "**Techniques principales:**\n\n"
+                "Membership inference exploits behavior differences\n"
+                "of the model on seen vs unseen data during training:\n\n"
+                "**Main techniques:**\n\n"
                 "** Perplexity-based **\n"
                 "   - Measures model 'surprise'\n"
                 "   - Low perplexity = familiar data\n\n"
@@ -303,29 +302,29 @@ class MembershipInferenceAttack(BaseAttack):
                 "** Confidence-based **\n"
                 "   - Analyzes output probabilities\n"
                 "   - High confidence = probable member\n\n"
-                "**Implications de confidentialité:**\n"
-                "- Violation de la vie privée si données personnelles\n"
-                "- Non-conformité RGPD potentielle\n"
-                "- Exposition de données propriétaires"
+                "**Privacy implications:**\n"
+                "- Privacy violation if personal data\n"
+                "- Potential GDPR non-compliance\n"
+                "- Proprietary data exposure"
             ),
             "real_world_impact": [
-                "Identification de patients dans des modèles médicaux",
-                "Révélation de données financières dans des modèles de crédit",
-                "Extraction d'informations sur des individus spécifiques",
+                "Identifying patients in medical models",
+                "Revealing financial data in credit models",
+                "Extracting information about specific individuals",
             ],
             "defenses": [
-                "Utiliser le differential privacy pendant l'entraînement",
-                "Implémenter la régularisation pour réduire l'overfitting",
-                "Limiter les informations de confiance exposées",
-                "Ajouter du bruit aux sorties du modèle",
-                "Utiliser des techniques d'anonymisation des données",
-                "Auditer régulièrement les risques de mémorisation",
-                "Implémenter des mécanismes de 'machine unlearning'",
-                "Limiter l'accès aux logits et probabilités brutes",
+                "Use differential privacy during training",
+                "Implement regularization to reduce overfitting",
+                "Limit exposed confidence information",
+                "Add noise to model outputs",
+                "Use data anonymization techniques",
+                "Regularly audit memorization risks",
+                "Implement 'machine unlearning' mechanisms",
+                "Limit access to raw logits and probabilities",
             ],
             "legal_considerations": [
-                "RGPD: Droit à l'oubli et minimisation des données",
-                "CCPA: Droits des consommateurs sur leurs données",
-                "HIPAA: Protection des données de santé",
+                "GDPR: Right to erasure and data minimization",
+                "CCPA: Consumer rights over their data",
+                "HIPAA: Health data protection",
             ]
         }

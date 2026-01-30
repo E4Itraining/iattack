@@ -1,5 +1,5 @@
 """
-Attacks Module - Collection d'attaques simulées sur LLM
+Attacks Module - Collection of simulated LLM attacks
 """
 
 from .prompt_injection import PromptInjectionAttack
@@ -8,7 +8,7 @@ from .jailbreak import JailbreakAttack
 from .model_extraction import ModelExtractionAttack
 from .membership_inference import MembershipInferenceAttack
 
-# Registre des attaques disponibles
+# Registry of available attacks
 ATTACK_REGISTRY = {
     "prompt_injection": PromptInjectionAttack,
     "data_poisoning": DataPoisoningAttack,

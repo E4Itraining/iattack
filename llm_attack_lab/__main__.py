@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Point d'entrée principal du LLM Attack Simulation Lab
+Main entry point for the LLM Attack Simulation Lab
 """
 
 import argparse
@@ -18,7 +18,7 @@ console = Console()
 
 
 def display_banner():
-    """Affiche la bannière du lab"""
+    """Displays the lab banner"""
     banner = """
     ╔═══════════════════════════════════════════════════════════════╗
     ║                                                               ║
@@ -39,25 +39,25 @@ def display_banner():
 
 
 def display_attack_menu():
-    """Affiche le menu des attaques disponibles"""
+    """Displays the available attacks menu"""
     table = Table(
-        title="Attaques Disponibles",
+        title="Available Attacks",
         box=box.DOUBLE_EDGE,
         show_header=True,
         header_style="bold magenta"
     )
 
     table.add_column("ID", style="cyan", width=5)
-    table.add_column("Attaque", style="green", width=25)
+    table.add_column("Attack", style="green", width=25)
     table.add_column("Description", style="white", width=45)
-    table.add_column("Risque", style="red", width=10)
+    table.add_column("Risk", style="red", width=10)
 
     attacks = [
-        ("1", "Prompt Injection", "Injection de prompts malveillants", "[!] Critique"),
-        ("2", "Data Poisoning", "Corruption des données d'entraînement", "[!] Eleve"),
-        ("3", "Jailbreak", "Contournement des restrictions", "[!] Critique"),
-        ("4", "Model Extraction", "Extraction du modèle", "[!] Eleve"),
-        ("5", "Membership Inference", "Detection de donnees d'entrainement", "[.] Moyen"),
+        ("1", "Prompt Injection", "Malicious prompt injection", "[!] Critical"),
+        ("2", "Data Poisoning", "Training data corruption", "[!] High"),
+        ("3", "Jailbreak", "Bypassing restrictions", "[!] Critical"),
+        ("4", "Model Extraction", "Model extraction", "[!] High"),
+        ("5", "Membership Inference", "Training data detection", "[.] Medium"),
     ]
 
     for attack in attacks:
@@ -68,44 +68,44 @@ def display_attack_menu():
 
 def main():
     parser = argparse.ArgumentParser(
-        description="LLM Attack Simulation Lab - Plateforme éducative de sécurité LLM"
+        description="LLM Attack Simulation Lab - Educational LLM Security Platform"
     )
 
     parser.add_argument(
         "--interactive", "-i",
         action="store_true",
-        help="Lancer le mode interactif CLI"
+        help="Launch interactive CLI mode"
     )
 
     parser.add_argument(
         "--web", "-w",
         action="store_true",
-        help="Lancer le dashboard web"
+        help="Launch web dashboard"
     )
 
     parser.add_argument(
         "--port", "-p",
         type=int,
         default=None,
-        help="Port pour le serveur web (défaut: 8081, ou WEB_SERVER_PORT)"
+        help="Port for web server (default: 8081, or WEB_SERVER_PORT)"
     )
 
     parser.add_argument(
         "--attack", "-a",
         choices=list(ATTACK_REGISTRY.keys()),
-        help="Exécuter une attaque spécifique"
+        help="Execute a specific attack"
     )
 
     parser.add_argument(
         "--demo",
         action="store_true",
-        help="Exécuter une démonstration complète"
+        help="Execute a complete demonstration"
     )
 
     parser.add_argument(
         "--list",
         action="store_true",
-        help="Lister toutes les attaques disponibles"
+        help="List all available attacks"
     )
 
     args = parser.parse_args()
@@ -118,25 +118,25 @@ def main():
 
     if args.web:
         from llm_attack_lab.web.app import run_web_server
-        console.print("\n[bold green][WEB] Demarrage du serveur web...[/]")
+        console.print("\n[bold green][WEB] Starting web server...[/]")
         run_web_server(port=args.port)
         return
 
     if args.attack:
-        console.print(f"\n[bold yellow][ATK] Execution de l'attaque: {args.attack}[/]")
+        console.print(f"\n[bold yellow][ATK] Executing attack: {args.attack}[/]")
         attack_class = ATTACK_REGISTRY[args.attack]
         attack = attack_class()
         attack.run_simulation()
         return
 
     if args.demo:
-        console.print("\n[bold green][DEMO] Mode demonstration[/]")
+        console.print("\n[bold green][DEMO] Demo mode[/]")
         lab = InteractiveLab()
         lab.run_demo()
         return
 
-    # Mode interactif par defaut
-    console.print("\n[bold green][START] Demarrage du mode interactif...[/]\n")
+    # Interactive mode by default
+    console.print("\n[bold green][START] Starting interactive mode...[/]\n")
     lab = InteractiveLab()
     lab.run()
 
